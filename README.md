@@ -1,5 +1,7 @@
 ## signedxml
 
+[![GoDoc](https://godoc.org/github.com/ma314smith/signedxml?status.svg)](https://godoc.org/github.com/ma314smith/signedxml)
+
 The signedxml package transforms and validates signed xml documents. The main use case is to support Single Sign On protocols like SAML and WS-Federation.
 
 Other packages that provide similar functionality rely on C libraries, which makes them difficult to run across platforms without significant configuration.  `signedxml` is written in pure go, and can be easily used on any platform.
