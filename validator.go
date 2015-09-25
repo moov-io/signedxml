@@ -139,14 +139,22 @@ func (v *Validator) validateReferences() (err error) {
 
 func (v *Validator) getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
 	uri := reference.SelectAttrValue("URI", "")
+	uri = strings.Replace(uri, "#", "", 1)
 	// populate doc with the referenced xml from the Reference URI
-	if uri == "" || uri == "#" {
+	if uri == "" {
 		outputDoc = inputDoc
 	} else {
-		path := fmt.Sprintf(".//[@ID='%s']", strings.Replace(uri, "#", "", 1))
+		path := fmt.Sprintf(".//[@ID='%s']", uri)
 		e := inputDoc.FindElement(path)
 		if e != nil {
 			outputDoc = etree.CreateDocument(e).Copy()
+		} else {
+			// SAML v1.1 Assertions use AssertionID
+			path := fmt.Sprintf(".//[@AssertionID='%s']", uri)
+			e := inputDoc.FindElement(path)
+			if e != nil {
+				outputDoc = etree.CreateDocument(e).Copy()
+			}
 		}
 	}
 
