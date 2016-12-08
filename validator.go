@@ -166,6 +166,18 @@ func (v *Validator) getReferencedXML(reference *etree.Element, inputDoc *etree.D
 }
 
 func (v *Validator) validateSignature() error {
+	// Copy SignedInfo xmlns: into itself if it does not exist and is defined as a Response attribute
+	response := v.xml.FindElement("./Response")
+
+	if response != nil {
+		sigNS := response.SelectAttr("xmlns:" + v.signedInfo.Space)
+		if sigNS != nil {
+			if v.signedInfo.SelectAttr("xmlns:"+v.signedInfo.Space) == nil {
+				v.signedInfo.CreateAttr("xmlns:"+v.signedInfo.Space, sigNS.Value)
+			}
+		}
+	}
+
 	signedInfo, err := etree.CreateDocument(v.signedInfo).WriteToString()
 	if err != nil {
 		return err
