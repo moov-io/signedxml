@@ -1,10 +1,13 @@
 package signedxml
 
 import (
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"encoding/pem"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -49,6 +52,40 @@ func TestValidate(t *testing.T) {
 			validator := Validator{}
 			validator.SetXML(string(xmlBytes))
 			validator.SetSignature(sig)
+			err = validator.Validate()
+			Convey("Then no error occurs", func() {
+				So(err, ShouldBeNil)
+				So(validator.SigningCert().PublicKey, ShouldNotBeNil)
+			})
+		})
+
+		Convey("When Validate is called with an external certificate and root xmlns", func() {
+			xmlFile, err := os.Open("./testdata/rootxmlns.xml")
+			if err != nil {
+				fmt.Println("Error opening file:", err)
+			}
+
+			pemString, err := ioutil.ReadFile("./testdata/rootxmlns.crt")
+			if err != nil {
+				fmt.Println("Error reading certificate:", err)
+			}
+
+			pemBlock, _ := pem.Decode([]byte(pemString))
+			if pemBlock == nil {
+				fmt.Println("Error decoding certificate:", err)
+			}
+
+			cert, err := x509.ParseCertificate(pemBlock.Bytes)
+			if err != nil {
+				fmt.Println("Error parsing certificate:", err)
+			}
+
+			defer xmlFile.Close()
+			xmlBytes, _ := ioutil.ReadAll(xmlFile)
+			validator := Validator{}
+			validator.SetXML(string(xmlBytes))
+			validator.Certificates = append(validator.Certificates, *cert)
+
 			err = validator.Validate()
 			Convey("Then no error occurs", func() {
 				So(err, ShouldBeNil)
