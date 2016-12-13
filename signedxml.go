@@ -131,6 +131,18 @@ func (s *signatureData) parseSignedInfo() error {
 		}
 	}
 
+	// Copy SignedInfo xmlns: into itself if it does not exist and is defined as a root attribute
+	root := s.xml.Root()
+
+	if root != nil {
+		sigNS := root.SelectAttr("xmlns:" + s.signedInfo.Space)
+		if sigNS != nil {
+			if s.signedInfo.SelectAttr("xmlns:"+s.signedInfo.Space) == nil {
+				s.signedInfo.CreateAttr("xmlns:"+s.signedInfo.Space, sigNS.Value)
+			}
+		}
+	}
+
 	return nil
 }
 

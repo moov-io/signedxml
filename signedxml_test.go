@@ -2,15 +2,89 @@ package signedxml
 
 import (
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
 
-	"encoding/pem"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func TestSign(t *testing.T) {
+	Convey("Given an XML, certificate, and RSA key", t, func() {
+		pemString, err := ioutil.ReadFile("./testdata/rsa.crt")
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		pemBlock, _ := pem.Decode([]byte(pemString))
+		if pemBlock == nil {
+			fmt.Println("Could not parse certificate")
+		}
+
+		cert, err := x509.ParseCertificate(pemBlock.Bytes)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		pemString, err = ioutil.ReadFile("./testdata/rsa.key")
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		pemBlock, _ = pem.Decode([]byte(pemString))
+		if pemBlock == nil {
+			fmt.Println("Count not parse private key")
+		}
+
+		key, err := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		xml, err := ioutil.ReadFile("./testdata/nosignature.xml")
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		Convey("Then no error occurs", func() {
+			So(err, ShouldBeNil)
+		})
+
+		Convey("Generate and validate the signature", func() {
+			signer, err := NewSigner(string(xml))
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			xmlStr, err := signer.Sign(key)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			Convey("Then no error occurs signing", func() {
+				So(err, ShouldBeNil)
+			})
+
+			validator, err := NewValidator(xmlStr)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			validator.Certificates = append(validator.Certificates, *cert)
+
+			err = validator.Validate()
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			Convey("Then no error occurs validating", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+}
 
 func TestValidate(t *testing.T) {
 	Convey("Given valid signed XML", t, func() {
