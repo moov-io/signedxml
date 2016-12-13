@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -291,7 +290,7 @@ func calculateHash(reference *etree.Element, doc *etree.Document) (string, error
 		return "", err
 	}
 
-	ioutil.WriteFile("C:/Temp/SignedXML/Suspect.xml", docBytes, 0644)
+	//ioutil.WriteFile("C:/Temp/SignedXML/Suspect.xml", docBytes, 0644)
 	//s, _ := doc.WriteToString()
 	//logger.Println(s)
 
