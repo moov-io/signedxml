@@ -11,8 +11,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
-	"github.com/ma314smith/etree"
+	"etree"
 )
 
 var logger = log.New(os.Stdout, "DEBUG-SIGNEDXML: ", log.Ldate|log.Ltime|log.Lshortfile)
@@ -78,6 +79,138 @@ type CanonicalizationAlgorithm interface {
 var CanonicalizationAlgorithms map[string]CanonicalizationAlgorithm
 var hashAlgorithms map[string]crypto.Hash
 var signatureAlgorithms map[string]x509.SignatureAlgorithm
+
+// signatureData provides options for verifying a signed XML document
+type signatureData struct {
+	xml            *etree.Document
+	signature      *etree.Element
+	signedInfo     *etree.Element
+	sigValue       string
+	sigAlogrithm   x509.SignatureAlgorithm
+	canonAlgorithm CanonicalizationAlgorithm
+}
+
+// SetSignature can be used to assign an external signature for the XML doc
+// that Validator will verify
+func (s *signatureData) SetSignature(sig string) error {
+	doc := etree.NewDocument()
+	err := doc.ReadFromString(sig)
+	s.signature = doc.Root()
+	return err
+}
+
+func (s *signatureData) parseEnvelopedSignature() error {
+	sig := s.xml.FindElement(".//Signature")
+	if sig != nil {
+		s.signature = sig
+	} else {
+		return errors.New("signedxml: Unable to find a unique signature element " +
+			"in the xml document. The signature must either be enveloped in the " +
+			"xml doc or externally assigned to Validator.SetSignature")
+	}
+	return nil
+}
+
+func (s *signatureData) parseSignedInfo() error {
+	s.signedInfo = nil
+	s.signedInfo = s.signature.SelectElement("SignedInfo")
+	if s.signedInfo == nil {
+		return errors.New("signedxml: unable to find SignedInfo element")
+	}
+
+	// move the Signature level namespace down to SignedInfo so that the signature
+	// value will match up
+	if s.signedInfo.Space != "" {
+		attr := s.signature.SelectAttr(s.signedInfo.Space)
+		if attr != nil {
+			s.signedInfo.Attr = []etree.Attr{*attr}
+		}
+	} else {
+		attr := s.signature.SelectAttr("xmlns")
+		if attr != nil {
+			s.signedInfo.Attr = []etree.Attr{*attr}
+		}
+	}
+
+	return nil
+}
+
+func (s *signatureData) parseSigValue() error {
+	s.sigValue = ""
+	sigValueElement := s.signature.SelectElement("SignatureValue")
+	if sigValueElement != nil {
+		s.sigValue = sigValueElement.Text()
+		return nil
+	}
+	return errors.New("signedxml: unable to find SignatureValue")
+}
+
+func (s *signatureData) parseSigAlgorithm() error {
+	s.sigAlogrithm = x509.UnknownSignatureAlgorithm
+	sigMethod := s.signedInfo.SelectElement("SignatureMethod")
+
+	var sigAlgoURI string
+	if sigMethod == nil {
+		return errors.New("Unable to find SignatureMethod element")
+	}
+
+	sigAlgoURI = sigMethod.SelectAttrValue("Algorithm", "")
+	sigAlgo, ok := signatureAlgorithms[sigAlgoURI]
+	if ok {
+		s.sigAlogrithm = sigAlgo
+		return nil
+	}
+
+	return errors.New("Unable to find Algorithm in SignatureMethod element")
+}
+
+func (s *signatureData) parseCanonAlgorithm() error {
+	s.canonAlgorithm = nil
+	canonMethod := s.signedInfo.SelectElement("CanonicalizationMethod")
+
+	var canonAlgoURI string
+	if canonMethod == nil {
+		return errors.New("Unable to find CanonicalizationMethod element")
+	}
+
+	canonAlgoURI = canonMethod.SelectAttrValue("Algorithm", "")
+	canonAlgo, ok := CanonicalizationAlgorithms[canonAlgoURI]
+	if ok {
+		s.canonAlgorithm = canonAlgo
+		return nil
+	}
+
+	return errors.New("Unable to find Algorithm in " +
+		"CanonicalizationMethod element")
+}
+
+func getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
+	uri := reference.SelectAttrValue("URI", "")
+	uri = strings.Replace(uri, "#", "", 1)
+	// populate doc with the referenced xml from the Reference URI
+	if uri == "" {
+		outputDoc = inputDoc
+	} else {
+		path := fmt.Sprintf(".//[@ID='%s']", uri)
+		e := inputDoc.FindElement(path)
+		if e != nil {
+			outputDoc = etree.CreateDocument(e).Copy()
+		} else {
+			// SAML v1.1 Assertions use AssertionID
+			path := fmt.Sprintf(".//[@AssertionID='%s']", uri)
+			e := inputDoc.FindElement(path)
+			if e != nil {
+				outputDoc = etree.CreateDocument(e).Copy()
+			}
+		}
+	}
+
+	if outputDoc == nil {
+		return nil, errors.New("signedxml: unable to find refereced xml")
+	}
+
+	return outputDoc, nil
+}
 
 func getCertFromPEMString(pemString string) (*x509.Certificate, error) {
 	pubkey := fmt.Sprintf("-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----",
