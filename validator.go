@@ -13,14 +13,9 @@ import (
 
 // Validator provides options for verifying a signed XML document
 type Validator struct {
-	xml            *etree.Document
-	Certificates   []x509.Certificate
-	signingCert    x509.Certificate
-	signature      *etree.Element
-	signedInfo     *etree.Element
-	sigValue       string
-	sigAlogrithm   x509.SignatureAlgorithm
-	canonAlgorithm CanonicalizationAlgorithm
+	Certificates []x509.Certificate
+	signingCert  x509.Certificate
+	signatureData
 }
 
 // NewValidator returns a *Validator for the XML provided
@@ -30,7 +25,7 @@ func NewValidator(xml string) (*Validator, error) {
 	if err != nil {
 		return nil, err
 	}
-	v := &Validator{xml: doc}
+	v := &Validator{signatureData: signatureData{xml: doc}}
 	return v, nil
 }
 
@@ -39,15 +34,6 @@ func (v *Validator) SetXML(xml string) error {
 	doc := etree.NewDocument()
 	err := doc.ReadFromString(xml)
 	v.xml = doc
-	return err
-}
-
-// SetSignature can be used to assign an external signature for the XML doc
-// that Validator will verify
-func (v *Validator) SetSignature(sig string) error {
-	doc := etree.NewDocument()
-	err := doc.ReadFromString(sig)
-	v.signature = doc.Root()
 	return err
 }
 
@@ -79,20 +65,20 @@ func (v *Validator) Validate() error {
 
 func (v *Validator) loadValuesFromXML() error {
 	if v.signature == nil {
-		if err := v.setEnvelopedSignature(); err != nil {
+		if err := v.parseEnvelopedSignature(); err != nil {
 			return err
 		}
 	}
-	if err := v.setSignedInfo(); err != nil {
+	if err := v.parseSignedInfo(); err != nil {
 		return err
 	}
-	if err := v.setSigValue(); err != nil {
+	if err := v.parseSigValue(); err != nil {
 		return err
 	}
-	if err := v.setSigAlgorithm(); err != nil {
+	if err := v.parseSigAlgorithm(); err != nil {
 		return err
 	}
-	if err := v.setCanonAlgorithm(); err != nil {
+	if err := v.parseCanonAlgorithm(); err != nil {
 		return err
 	}
 	if err := v.loadCertificates(); err != nil {
@@ -227,89 +213,4 @@ func (v *Validator) loadCertificates() error {
 		return errors.New("signedxml: a certificate is required, but was not found")
 	}
 	return nil
-}
-
-func (v *Validator) setEnvelopedSignature() error {
-	sig := v.xml.FindElement(".//Signature")
-	if sig != nil {
-		v.signature = sig
-	} else {
-		return errors.New("signedxml: Unable to find a unique signature element " +
-			"in the xml document. The signature must either be enveloped in the " +
-			"xml doc or externally assigned to Validator.SetSignature")
-	}
-	return nil
-}
-
-func (v *Validator) setSignedInfo() error {
-	v.signedInfo = nil
-	v.signedInfo = v.signature.SelectElement("SignedInfo")
-	if v.signedInfo == nil {
-		return errors.New("signedxml: unable to find SignedInfo element")
-	}
-
-	// move the Signature level namespace down to SignedInfo so that the signature
-	// value will match up
-	if v.signedInfo.Space != "" {
-		attr := v.signature.SelectAttr(v.signedInfo.Space)
-		if attr != nil {
-			v.signedInfo.Attr = []etree.Attr{*attr}
-		}
-	} else {
-		attr := v.signature.SelectAttr("xmlns")
-		if attr != nil {
-			v.signedInfo.Attr = []etree.Attr{*attr}
-		}
-	}
-
-	return nil
-}
-
-func (v *Validator) setSigValue() error {
-	v.sigValue = ""
-	sigValueElement := v.signature.SelectElement("SignatureValue")
-	if sigValueElement != nil {
-		v.sigValue = sigValueElement.Text()
-		return nil
-	}
-	return errors.New("signedxml: unable to find SignatureValue")
-}
-
-func (v *Validator) setSigAlgorithm() error {
-	v.sigAlogrithm = x509.UnknownSignatureAlgorithm
-	sigMethod := v.signedInfo.SelectElement("SignatureMethod")
-
-	var sigAlgoURI string
-	if sigMethod == nil {
-		return errors.New("Unable to find SignatureMethod element")
-	}
-
-	sigAlgoURI = sigMethod.SelectAttrValue("Algorithm", "")
-	sigAlgo, ok := signatureAlgorithms[sigAlgoURI]
-	if ok {
-		v.sigAlogrithm = sigAlgo
-		return nil
-	}
-
-	return errors.New("Unable to find Algorithm in SignatureMethod element")
-}
-
-func (v *Validator) setCanonAlgorithm() error {
-	v.canonAlgorithm = nil
-	canonMethod := v.signedInfo.SelectElement("CanonicalizationMethod")
-
-	var canonAlgoURI string
-	if canonMethod == nil {
-		return errors.New("Unable to find CanonicalizationMethod element")
-	}
-
-	canonAlgoURI = canonMethod.SelectAttrValue("Algorithm", "")
-	canonAlgo, ok := CanonicalizationAlgorithms[canonAlgoURI]
-	if ok {
-		v.canonAlgorithm = canonAlgo
-		return nil
-	}
-
-	return errors.New("Unable to find Algorithm in " +
-		"CanonicalizationMethod element")
 }
