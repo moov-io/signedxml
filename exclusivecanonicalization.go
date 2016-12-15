@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ma314smith/etree"
+	"etree"
 )
 
 func init() {

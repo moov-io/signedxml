@@ -3,7 +3,7 @@ package signedxml
 import (
 	"errors"
 
-	"github.com/ma314smith/etree"
+	"etree"
 )
 
 // EnvelopedSignature implements the CanonicalizationAlgorithm
