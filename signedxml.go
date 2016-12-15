@@ -11,8 +11,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
-	"github.com/ma314smith/etree"
+	"etree"
 )
 
 var logger = log.New(os.Stdout, "DEBUG-SIGNEDXML: ", log.Ldate|log.Ltime|log.Lshortfile)
@@ -181,6 +182,34 @@ func (s *signatureData) parseCanonAlgorithm() error {
 
 	return errors.New("Unable to find Algorithm in " +
 		"CanonicalizationMethod element")
+}
+
+func getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
+	uri := reference.SelectAttrValue("URI", "")
+	uri = strings.Replace(uri, "#", "", 1)
+	// populate doc with the referenced xml from the Reference URI
+	if uri == "" {
+		outputDoc = inputDoc
+	} else {
+		path := fmt.Sprintf(".//[@ID='%s']", uri)
+		e := inputDoc.FindElement(path)
+		if e != nil {
+			outputDoc = etree.CreateDocument(e).Copy()
+		} else {
+			// SAML v1.1 Assertions use AssertionID
+			path := fmt.Sprintf(".//[@AssertionID='%s']", uri)
+			e := inputDoc.FindElement(path)
+			if e != nil {
+				outputDoc = etree.CreateDocument(e).Copy()
+			}
+		}
+	}
+
+	if outputDoc == nil {
+		return nil, errors.New("signedxml: unable to find refereced xml")
+	}
+
+	return outputDoc, nil
 }
 
 func getCertFromPEMString(pemString string) (*x509.Certificate, error) {

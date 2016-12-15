@@ -6,9 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 
-	"github.com/ma314smith/etree"
+	"etree"
 )
 
 // Validator provides options for verifying a signed XML document
@@ -99,7 +98,7 @@ func (v *Validator) validateReferences() (err error) {
 			}
 		}
 
-		doc, err = v.getReferencedXML(ref, doc)
+		doc, err = getReferencedXML(ref, doc)
 		if err != nil {
 			return err
 		}
@@ -121,34 +120,6 @@ func (v *Validator) validateReferences() (err error) {
 		}
 	}
 	return nil
-}
-
-func (v *Validator) getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
-	uri := reference.SelectAttrValue("URI", "")
-	uri = strings.Replace(uri, "#", "", 1)
-	// populate doc with the referenced xml from the Reference URI
-	if uri == "" {
-		outputDoc = inputDoc
-	} else {
-		path := fmt.Sprintf(".//[@ID='%s']", uri)
-		e := inputDoc.FindElement(path)
-		if e != nil {
-			outputDoc = etree.CreateDocument(e).Copy()
-		} else {
-			// SAML v1.1 Assertions use AssertionID
-			path := fmt.Sprintf(".//[@AssertionID='%s']", uri)
-			e := inputDoc.FindElement(path)
-			if e != nil {
-				outputDoc = etree.CreateDocument(e).Copy()
-			}
-		}
-	}
-
-	if outputDoc == nil {
-		return nil, errors.New("signedxml: unable to find refereced xml")
-	}
-
-	return outputDoc, nil
 }
 
 func (v *Validator) validateSignature() error {
