@@ -85,7 +85,7 @@ type signatureData struct {
 	signature      *etree.Element
 	signedInfo     *etree.Element
 	sigValue       string
-	sigAlogrithm   x509.SignatureAlgorithm
+	sigAlgorithm   x509.SignatureAlgorithm
 	canonAlgorithm CanonicalizationAlgorithm
 }
 
@@ -145,7 +145,7 @@ func (s *signatureData) parseSigValue() error {
 }
 
 func (s *signatureData) parseSigAlgorithm() error {
-	s.sigAlogrithm = x509.UnknownSignatureAlgorithm
+	s.sigAlgorithm = x509.UnknownSignatureAlgorithm
 	sigMethod := s.signedInfo.SelectElement("SignatureMethod")
 
 	var sigAlgoURI string
@@ -156,7 +156,7 @@ func (s *signatureData) parseSigAlgorithm() error {
 	sigAlgoURI = sigMethod.SelectAttrValue("Algorithm", "")
 	sigAlgo, ok := signatureAlgorithms[sigAlgoURI]
 	if ok {
-		s.sigAlogrithm = sigAlgo
+		s.sigAlgorithm = sigAlgo
 		return nil
 	}
 

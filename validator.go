@@ -47,7 +47,7 @@ func (v *Validator) SigningCert() x509.Certificate {
 // over the SignedInfo.
 //
 // If the signature is enveloped in the Validator.XML, then it will be used.
-// Otherwise, an external signature should be assinged using
+// Otherwise, an external signature should be assigned using
 // Validator.SetSignature.
 func (v *Validator) Validate() error {
 	if err := v.loadValuesFromXML(); err != nil {
@@ -153,7 +153,7 @@ func (v *Validator) validateSignature() error {
 
 	v.signingCert = x509.Certificate{}
 	for _, cert := range v.Certificates {
-		err := cert.CheckSignature(v.sigAlogrithm, []byte(canonSignedInfo), sig)
+		err := cert.CheckSignature(v.sigAlgorithm, []byte(canonSignedInfo), sig)
 		if err == nil {
 			v.signingCert = cert
 			return nil
