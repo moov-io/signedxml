@@ -1,6 +1,6 @@
 ## signedxml
 
-![Codeship](https://codeship.com/projects/8e401330-a517-0134-1de0-4eeff12c02e8/status?branch=master)
+[![Build Status](https://travis-ci.org/ma314smith/signedxml.svg?branch=master)](https://travis-ci.org/ma314smith/signedxml)
 [![GoDoc](https://godoc.org/github.com/ma314smith/signedxml?status.svg)](https://godoc.org/github.com/ma314smith/signedxml)
 
 The signedxml package transforms and validates signed xml documents. The main use case is to support Single Sign On protocols like SAML and WS-Federation.
@@ -89,7 +89,7 @@ func (n NoChangeCanonicalization) Process(inputXML string,
 	return inputXML, nil
 }
 
-signedxml.CanonicalizationAlgorithms["http://myTranform"] = NullCanonicalization{}
+signedxml.CanonicalizationAlgorithms["http://myTranform"] = NoChangeCanonicalization{}
 ```
 
 See `envelopedsignature.go` and `exclusivecanonicalization.go` for examples of actual implementations.
