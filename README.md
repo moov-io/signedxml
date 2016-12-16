@@ -81,7 +81,7 @@ func (n NoChangeCanonicalization) Process(inputXML string,
 	return inputXML, nil
 }
 
-signedxml.CanonicalizationAlgorithms["http://myTranform"] = NullCanonicalization{}
+signedxml.CanonicalizationAlgorithms["http://myTranform"] = NoChangeCanonicalization{}
 ```
 
 See `envelopedsignature.go` and `exclusivecanonicalization.go` for examples of actual implementations.
