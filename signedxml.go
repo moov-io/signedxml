@@ -18,8 +18,6 @@ import (
 var logger = log.New(os.Stdout, "DEBUG-SIGNEDXML: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 func init() {
-	etree.SupportCanonicalXML = true
-
 	hashAlgorithms = map[string]crypto.Hash{
 		"http://www.w3.org/2001/04/xmldsig-more#md5":    crypto.MD5,
 		"http://www.w3.org/2000/09/xmldsig#sha1":        crypto.SHA1,
@@ -205,13 +203,15 @@ func getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outpu
 		path := fmt.Sprintf(".//[@ID='%s']", uri)
 		e := inputDoc.FindElement(path)
 		if e != nil {
-			outputDoc = etree.CreateDocument(e).Copy()
+			outputDoc = etree.NewDocument()
+			outputDoc.SetRoot(e.Copy())
 		} else {
 			// SAML v1.1 Assertions use AssertionID
 			path := fmt.Sprintf(".//[@AssertionID='%s']", uri)
 			e := inputDoc.FindElement(path)
 			if e != nil {
-				outputDoc = etree.CreateDocument(e).Copy()
+				outputDoc = etree.NewDocument()
+				outputDoc.SetRoot(e.Copy())
 			}
 		}
 	}
@@ -256,7 +256,8 @@ func processTransform(transform *etree.Element,
 	var transformContent string
 
 	if transform.ChildElements() != nil {
-		tDoc := etree.CreateDocument(transform)
+		tDoc := etree.NewDocument()
+		tDoc.SetRoot(transform.Copy())
 		transformContent, err = tDoc.WriteToString()
 		if err != nil {
 			return nil, err
@@ -295,6 +296,10 @@ func calculateHash(reference *etree.Element, doc *etree.Document) (string, error
 		return "", fmt.Errorf("signedxml: unable to find matching hash"+
 			"algorithm for %s in hashAlgorithms", digestMethodURI)
 	}
+
+	doc.WriteSettings.CanonicalEndTags = true
+	doc.WriteSettings.CanonicalText = true
+	doc.WriteSettings.CanonicalAttrVal = true
 
 	h := digestAlgo.New()
 	docBytes, err := doc.WriteToBytes()

@@ -24,12 +24,12 @@ func (e EnvelopedSignature) Process(inputXML string,
 		return "", errors.New("signedxml: unable to find Signature node")
 	}
 
-	sigParent := sig.Parent
+	sigParent := sig.Parent()
 	if sigParent == nil {
 		return "", errors.New("signedxml: unable to find Signature parent element")
 	}
 
-	elem := sigParent.RemoveElement(sig)
+	elem := sigParent.RemoveChild(sig)
 	if elem == nil {
 		return "", errors.New("signedxml: unable to remove Signature element")
 	}
