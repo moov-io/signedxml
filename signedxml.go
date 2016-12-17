@@ -12,7 +12,7 @@ import (
 	"os"
 	"strings"
 
-	"etree"
+	"github.com/beevik/etree"
 )
 
 var logger = log.New(os.Stdout, "DEBUG-SIGNEDXML: ", log.Ldate|log.Ltime|log.Lshortfile)

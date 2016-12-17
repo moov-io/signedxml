@@ -11,7 +11,7 @@ import (
 	"errors"
 	"math/big"
 
-	"etree"
+	"github.com/beevik/etree"
 )
 
 var signingAlgorithms map[x509.SignatureAlgorithm]cryptoHash

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	"etree"
+	"github.com/beevik/etree"
 )
 
 // Validator provides options for verifying a signed XML document
