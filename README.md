@@ -14,24 +14,24 @@ Other packages that provide similar functionality rely on C libraries, which mak
 ### Included Algorithms
 
 - Hashes
-  - http://www.w3.org/2001/04/xmldsig-more#md5   
-  - http://www.w3.org/2000/09/xmldsig#sha1       
+  - http://www.w3.org/2001/04/xmldsig-more#md5
+  - http://www.w3.org/2000/09/xmldsig#sha1
   - http://www.w3.org/2001/04/xmldsig-more#sha224
-  - http://www.w3.org/2001/04/xmlenc#sha256      
+  - http://www.w3.org/2001/04/xmlenc#sha256
   - http://www.w3.org/2001/04/xmldsig-more#sha384
-  - http://www.w3.org/2001/04/xmlenc#sha512      
+  - http://www.w3.org/2001/04/xmlenc#sha512
   - http://www.w3.org/2001/04/xmlenc#ripemd160
 
 
 - Signatures
   - http://www.w3.org/2001/04/xmldsig-more#rsa-md2
   - http://www.w3.org/2001/04/xmldsig-more#rsa-md5
-  - http://www.w3.org/2000/09/xmldsig#rsa-sha1  
+  - http://www.w3.org/2000/09/xmldsig#rsa-sha1
   - http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
   - http://www.w3.org/2001/04/xmldsig-more#rsa-sha384
   - http://www.w3.org/2001/04/xmldsig-more#rsa-sha512
-  - http://www.w3.org/2000/09/xmldsig#dsa-sha1       
-  - http://www.w3.org/2000/09/xmldsig#dsa-sha256  
+  - http://www.w3.org/2000/09/xmldsig#dsa-sha1
+  - http://www.w3.org/2000/09/xmldsig#dsa-sha256
   - http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1
   - http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256
   - http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384
@@ -40,7 +40,7 @@ Other packages that provide similar functionality rely on C libraries, which mak
 
 - Canonicalization Methods/Transforms
   - http://www.w3.org/2000/09/xmldsig#enveloped-signature
-  - http://www.w3.org/2001/10/xml-exc-c14n#  
+  - http://www.w3.org/2001/10/xml-exc-c14n#
   - http://www.w3.org/2001/10/xml-exc-c14n#WithComments
 
 ### Examples
@@ -64,6 +64,14 @@ If you need to specify an external Signature, you can use the `SetSignature()` f
 ```go
 validator.SetSignature(<`Signature></Signature>`)
 ```
+
+#### Generating signed XML
+It is expected that your XML contains the Signature element with all the parameters set (except DigestValue and SignatureValue).
+```go
+signer, err := signedxml.NewSigner(`<YourXMLString></YourXMLString`)
+signedXML, err := signer.Sign(`*rsa.PrivateKey object`)
+```
+`Sign()` will generate the DigestValue and SignatureValue, populate it in the XML, and return the signed XML string.
 
 #### Implementing custom transforms
 Additional Transform algorithms can be included by adding to the CanonicalizationAlgorithms map.  This interface will need to be implemented:

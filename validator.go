@@ -47,7 +47,7 @@ func (v *Validator) SigningCert() x509.Certificate {
 // over the SignedInfo.
 //
 // If the signature is enveloped in the Validator.XML, then it will be used.
-// Otherwise, an external signature should be assinged using
+// Otherwise, an external signature should be assigned using
 // Validator.SetSignature.
 func (v *Validator) Validate() error {
 	if err := v.loadValuesFromXML(); err != nil {
@@ -123,18 +123,6 @@ func (v *Validator) validateReferences() (err error) {
 }
 
 func (v *Validator) validateSignature() error {
-	// Copy SignedInfo xmlns: into itself if it does not exist and is defined as a Response attribute
-	response := v.xml.FindElement("./Response")
-
-	if response != nil {
-		sigNS := response.SelectAttr("xmlns:" + v.signedInfo.Space)
-		if sigNS != nil {
-			if v.signedInfo.SelectAttr("xmlns:"+v.signedInfo.Space) == nil {
-				v.signedInfo.CreateAttr("xmlns:"+v.signedInfo.Space, sigNS.Value)
-			}
-		}
-	}
-
 	signedInfo, err := etree.CreateDocument(v.signedInfo).WriteToString()
 	if err != nil {
 		return err
@@ -153,7 +141,7 @@ func (v *Validator) validateSignature() error {
 
 	v.signingCert = x509.Certificate{}
 	for _, cert := range v.Certificates {
-		err := cert.CheckSignature(v.sigAlogrithm, []byte(canonSignedInfo), sig)
+		err := cert.CheckSignature(v.sigAlgorithm, []byte(canonSignedInfo), sig)
 		if err == nil {
 			v.signingCert = cert
 			return nil
