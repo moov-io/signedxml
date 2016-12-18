@@ -3,7 +3,7 @@ package signedxml
 import (
 	"errors"
 
-	"etree"
+	"github.com/beevik/etree"
 )
 
 // EnvelopedSignature implements the CanonicalizationAlgorithm
@@ -24,12 +24,8 @@ func (e EnvelopedSignature) Process(inputXML string,
 		return "", errors.New("signedxml: unable to find Signature node")
 	}
 
-	sigParent := sig.Parent
-	if sigParent == nil {
-		return "", errors.New("signedxml: unable to find Signature parent element")
-	}
-
-	elem := sigParent.RemoveElement(sig)
+	sigParent := sig.Parent()
+	elem := sigParent.RemoveChild(sig)
 	if elem == nil {
 		return "", errors.New("signedxml: unable to remove Signature element")
 	}

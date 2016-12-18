@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	"etree"
+	"github.com/beevik/etree"
 )
 
 // Validator provides options for verifying a signed XML document
@@ -123,7 +123,9 @@ func (v *Validator) validateReferences() (err error) {
 }
 
 func (v *Validator) validateSignature() error {
-	signedInfo, err := etree.CreateDocument(v.signedInfo).WriteToString()
+	doc := etree.NewDocument()
+	doc.SetRoot(v.signedInfo.Copy())
+	signedInfo, err := doc.WriteToString()
 	if err != nil {
 		return err
 	}

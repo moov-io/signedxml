@@ -4,38 +4,8 @@ import (
 	"sort"
 	"strings"
 
-	"etree"
+	"github.com/beevik/etree"
 )
-
-func init() {
-	etree.SupportCanonicalXML = true
-}
-
-// www.w3.org/TR/2007/CR-xml-c14n11-20070621/#ProcessingModel
-var xmlAttributeReplacer = strings.NewReplacer(
-	"&", "&amp;",
-	"<", "&lt;",
-	`"`, "&quot;",
-	"\t", "&#x9;",
-	"\n", "&#xA;",
-	"\r", "&#xD;",
-)
-
-func escapeAttribute(s string) string {
-	return xmlAttributeReplacer.Replace(s)
-}
-
-// www.w3.org/TR/2007/CR-xml-c14n11-20070621/#ProcessingModel
-var xmlTextReplacer = strings.NewReplacer(
-	"&", "&amp;",
-	"<", "&lt;",
-	">", "&gt;",
-	"\r", "&#xD;",
-)
-
-func escapeText(s string) string {
-	return xmlTextReplacer.Replace(s)
-}
 
 // the attribute and attributes structs are used to implement the sort.Interface
 type attribute struct {
@@ -87,6 +57,10 @@ func (e ExclusiveCanonicalization) Process(inputXML string,
 	e.namespaces = make(map[string]string)
 
 	doc := etree.NewDocument()
+	doc.WriteSettings.CanonicalEndTags = true
+	doc.WriteSettings.CanonicalText = true
+	doc.WriteSettings.CanonicalAttrVal = true
+
 	err = doc.ReadFromString(inputXML)
 	if err != nil {
 		return "", err
@@ -125,7 +99,6 @@ func (e ExclusiveCanonicalization) processDocLevelNodes(doc *etree.Document) {
 		switch c := c.(type) {
 		case *etree.Comment:
 			if e.WithComments {
-				escapeText(c.Data)
 				previousNodeRemoved = false
 			} else {
 				removeTokenFromDocument(c, doc)
@@ -178,13 +151,9 @@ func (e ExclusiveCanonicalization) processRecursive(node *etree.Element,
 	for _, child := range node.Child {
 		switch child := child.(type) {
 		case *etree.Comment:
-			if e.WithComments {
-				escapeText(child.Data)
-			} else {
+			if !e.WithComments {
 				removeTokenFromElement(etree.Token(child), node)
 			}
-		case *etree.CharData:
-			child.Data = escapeText(child.Data)
 		case *etree.Element:
 			e.processRecursive(child, newPrefixesInScope, newDefaultNS)
 		}
@@ -203,7 +172,7 @@ func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element,
 	// load map with for prefix -> uri lookup
 	for _, attr := range node.Attr {
 		if attr.Space == "xmlns" {
-			e.namespaces[attr.Key] = escapeAttribute(attr.Value)
+			e.namespaces[attr.Key] = attr.Value
 		}
 	}
 
@@ -225,7 +194,7 @@ func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element,
 			if !contains(prefixesInScope, attr.Key) &&
 				contains(e.inclusiveNamespacePrefixList, attr.Key) {
 
-				nsListToRender["xmlns:"+attr.Key] = escapeAttribute(attr.Value)
+				nsListToRender["xmlns:"+attr.Key] = attr.Value
 				prefixesInScope = append(prefixesInScope, attr.Key)
 			}
 		}
@@ -246,7 +215,7 @@ func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element,
 					prefix: attr.Space,
 					uri:    e.namespaces[attr.Space],
 					key:    attr.Key,
-					value:  escapeAttribute(attr.Value),
+					value:  attr.Value,
 				})
 		}
 	}
