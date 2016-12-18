@@ -160,7 +160,7 @@ func (s *signatureData) parseSigAlgorithm() error {
 
 	var sigAlgoURI string
 	if sigMethod == nil {
-		return errors.New("Unable to find SignatureMethod element")
+		return errors.New("signedxml: Unable to find SignatureMethod element")
 	}
 
 	sigAlgoURI = sigMethod.SelectAttrValue("Algorithm", "")
@@ -170,7 +170,7 @@ func (s *signatureData) parseSigAlgorithm() error {
 		return nil
 	}
 
-	return errors.New("Unable to find Algorithm in SignatureMethod element")
+	return errors.New("signedxml: Unable to find Algorithm in SignatureMethod element")
 }
 
 func (s *signatureData) parseCanonAlgorithm() error {
@@ -179,7 +179,7 @@ func (s *signatureData) parseCanonAlgorithm() error {
 
 	var canonAlgoURI string
 	if canonMethod == nil {
-		return errors.New("Unable to find CanonicalizationMethod element")
+		return errors.New("signedxml: Unable to find CanonicalizationMethod element")
 	}
 
 	canonAlgoURI = canonMethod.SelectAttrValue("Algorithm", "")
@@ -189,7 +189,7 @@ func (s *signatureData) parseCanonAlgorithm() error {
 		return nil
 	}
 
-	return errors.New("Unable to find Algorithm in " +
+	return errors.New("signedxml: Unable to find Algorithm in " +
 		"CanonicalizationMethod element")
 }
 

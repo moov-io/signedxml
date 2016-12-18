@@ -2,14 +2,11 @@ package signedxml
 
 import (
 	"crypto"
-	"crypto/dsa"
-	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
-	"math/big"
 
 	"github.com/beevik/etree"
 )
@@ -63,17 +60,17 @@ func (s *Signer) Sign(privateKey interface{}) (string, error) {
 	s.privateKey = privateKey
 
 	if s.signature == nil {
-		if err := s.signatureData.parseEnvelopedSignature(); err != nil {
+		if err := s.parseEnvelopedSignature(); err != nil {
 			return "", err
 		}
 	}
-	if err := s.signatureData.parseSignedInfo(); err != nil {
+	if err := s.parseSignedInfo(); err != nil {
 		return "", err
 	}
-	if err := s.signatureData.parseSigAlgorithm(); err != nil {
+	if err := s.parseSigAlgorithm(); err != nil {
 		return "", err
 	}
-	if err := s.signatureData.parseCanonAlgorithm(); err != nil {
+	if err := s.parseCanonAlgorithm(); err != nil {
 		return "", err
 	}
 	if err := s.setDigest(); err != nil {
@@ -83,7 +80,7 @@ func (s *Signer) Sign(privateKey interface{}) (string, error) {
 		return "", err
 	}
 
-	xml, err := s.signatureData.xml.WriteToString()
+	xml, err := s.xml.WriteToString()
 	if err != nil {
 		return "", err
 	}
@@ -91,9 +88,9 @@ func (s *Signer) Sign(privateKey interface{}) (string, error) {
 }
 
 func (s *Signer) setDigest() (err error) {
-	references := s.signatureData.signedInfo.FindElements("./Reference")
+	references := s.signedInfo.FindElements("./Reference")
 	for _, ref := range references {
-		doc := s.signatureData.xml.Copy()
+		doc := s.xml.Copy()
 		transforms := ref.SelectElement("Transforms")
 		for _, transform := range transforms.SelectElements("Transform") {
 			doc, err = processTransform(transform, doc)
@@ -129,14 +126,14 @@ func (s *Signer) setSignature() error {
 		return err
 	}
 
-	canonSignedInfo, err := s.signatureData.canonAlgorithm.Process(signedInfo, "")
+	canonSignedInfo, err := s.canonAlgorithm.Process(signedInfo, "")
 	if err != nil {
 		return err
 	}
 
 	var hashed, signature []byte
-	var h1, h2 *big.Int
-	signingAlgorithm, ok := signingAlgorithms[s.signatureData.sigAlgorithm]
+	//var h1, h2 *big.Int
+	signingAlgorithm, ok := signingAlgorithms[s.sigAlgorithm]
 	if !ok {
 		return errors.New("signedxml: unsupported algorithm")
 	}
@@ -148,22 +145,26 @@ func (s *Signer) setSignature() error {
 	switch signingAlgorithm.algorithm {
 	case "rsa":
 		signature, err = rsa.SignPKCS1v15(rand.Reader, s.privateKey.(*rsa.PrivateKey), signingAlgorithm.hash, hashed)
-	case "dsa":
-		h1, h2, err = dsa.Sign(rand.Reader, s.privateKey.(*dsa.PrivateKey), hashed)
-	case "ecdsa":
-		h1, h2, err = ecdsa.Sign(rand.Reader, s.privateKey.(*ecdsa.PrivateKey), hashed)
+		/*
+			case "dsa":
+				h1, h2, err = dsa.Sign(rand.Reader, s.privateKey.(*dsa.PrivateKey), hashed)
+			case "ecdsa":
+				h1, h2, err = ecdsa.Sign(rand.Reader, s.privateKey.(*ecdsa.PrivateKey), hashed)
+		*/
 	}
 	if err != nil {
 		return err
 	}
 
 	// DSA and ECDSA has not been validated
-	if signature == nil && h1 != nil && h2 != nil {
-		signature = append(h1.Bytes(), h2.Bytes()...)
-	}
+	/*
+		if signature == nil && h1 != nil && h2 != nil {
+			signature = append(h1.Bytes(), h2.Bytes()...)
+		}
+	*/
 
 	b64 := base64.StdEncoding.EncodeToString(signature)
-	sigValueElement := s.signatureData.signature.SelectElement("SignatureValue")
+	sigValueElement := s.signature.SelectElement("SignatureValue")
 	sigValueElement.SetText(b64)
 
 	return nil

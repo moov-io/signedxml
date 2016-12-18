@@ -8,78 +8,32 @@ import (
 	"os"
 	"testing"
 
+	"github.com/beevik/etree"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSign(t *testing.T) {
 	Convey("Given an XML, certificate, and RSA key", t, func() {
-		pemString, err := ioutil.ReadFile("./testdata/rsa.crt")
-		if err != nil {
-			fmt.Println(err)
-		}
-
+		pemString, _ := ioutil.ReadFile("./testdata/rsa.crt")
 		pemBlock, _ := pem.Decode([]byte(pemString))
-		if pemBlock == nil {
-			fmt.Println("Could not parse certificate")
-		}
+		cert, _ := x509.ParseCertificate(pemBlock.Bytes)
 
-		cert, err := x509.ParseCertificate(pemBlock.Bytes)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		pemString, err = ioutil.ReadFile("./testdata/rsa.key")
-		if err != nil {
-			fmt.Println(err)
-		}
-
+		pemString, _ = ioutil.ReadFile("./testdata/rsa.key")
 		pemBlock, _ = pem.Decode([]byte(pemString))
-		if pemBlock == nil {
-			fmt.Println("Count not parse private key")
-		}
+		key, _ := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
 
-		key, err := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
-		if err != nil {
-			fmt.Println(err)
-		}
+		xml, _ := ioutil.ReadFile("./testdata/nosignature.xml")
 
-		xml, err := ioutil.ReadFile("./testdata/nosignature.xml")
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		Convey("Then no error occurs", func() {
-			So(err, ShouldBeNil)
-		})
-
-		Convey("Generate and validate the signature", func() {
-			signer, err := NewSigner(string(xml))
-			if err != nil {
-				fmt.Println(err)
-			}
-
+		Convey("When generating the signature", func() {
+			signer, _ := NewSigner(string(xml))
 			xmlStr, err := signer.Sign(key)
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			Convey("Then no error occurs signing", func() {
+			Convey("Then no error occurs", func() {
 				So(err, ShouldBeNil)
 			})
-
-			validator, err := NewValidator(xmlStr)
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			validator.Certificates = append(validator.Certificates, *cert)
-
-			err = validator.Validate()
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			Convey("Then no error occurs validating", func() {
+			Convey("And the signature should be valid", func() {
+				validator, _ := NewValidator(xmlStr)
+				validator.Certificates = append(validator.Certificates, *cert)
+				err := validator.Validate()
 				So(err, ShouldBeNil)
 			})
 		})
@@ -116,17 +70,14 @@ func TestValidate(t *testing.T) {
 		}
 
 		Convey("When Validate is called with an external Signature", func() {
-			xmlFile, err := os.Open("./testdata/bbauth-metadata.xml")
+			xmlFile, _ := os.Open("./testdata/bbauth-metadata.xml")
 			sig := `<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI="#_69b42076-409e-4476-af41-339962e49427"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>LPHoiAkLmA/TGIuVbgpwlFLXL+ymEBc7TS0fC9/PTQU=</DigestValue></Reference></SignedInfo><SignatureValue>d2CXq9GEeDKvMxdpxtTRKQ8TGeSWhJOVPs8LMD0ObeE1t/YGiAm9keorMiki4laxbWqAuOmwHK3qNHogRFgkIYi3fnuFBzMrahXf0n3A5PRXXW1m768Z92GKV09pGuygKUXCtXzwq0seDi6PnzMCJFzFXGQWnum0paa8Oz+6425Sn0zO0fT3ttp3AXeXGyNXwYPYcX1iEMB7klUlyiz2hmn8ngCIbTkru7uIeyPmQ5WD4SS/qQaL4yb3FZibXoe/eRXrbkG1NAJCw9OWw0jsvWncE1rKFaqEMbz21fXSDhh3Ls+p9yVf+xbCrpkT0FMqjTHpNRvccMPZe/hDGrHV7Q==</SignatureValue><KeyInfo><X509Data><X509Certificate>MIIDNzCCAh+gAwIBAgIQQVK+d/vLK4ZNMDk15HGUoTANBgkqhkiG9w0BAQ0FADAoMSYwJAYDVQQDEx1CbGFja2JhdWQgQXV0aGVudGljYXRpb24gMjAyMjAeFw0wMDAxMDEwNDAwMDBaFw0yMjAxMDEwNDAwMDBaMCgxJjAkBgNVBAMTHUJsYWNrYmF1ZCBBdXRoZW50aWNhdGlvbiAyMDIyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArgByjSPVvP4DLf/l7QRz7G7Dhkdns0QjWslnWejHlFIezfkJ4NGPp0+5CRCFYBqAb7DhqyK77Ek5xdzmwgYb1X6GD6UDltWvN5BBFAw69I6/K0WjguFUxk19T7xdc8vTCNAMi+6Ys49O3EBNnI2fiqDoBdMjUTud1F04QY3N2rZWkjMrHV+CnzhoUwqsO/ABWrDbkPzBXdOOIbsKH0k0IP8q2+35pe1y2nxtB9f1fCyCmbUH2HINMHahDmxxanTW5Jy14yD/HSRTFQF9JMTeglomWq5q9VPx0NjsEJR+B5IkRCTf75LoYrrr/fvQm3aummmYPdHauXCBrcm0moX4ywIDAQABo10wWzBZBgNVHQEEUjBQgBDCHOfardZfhltQSbLqsukZoSowKDEmMCQGA1UEAxMdQmxhY2tiYXVkIEF1dGhlbnRpY2F0aW9uIDIwMjKCEEFSvnf7yyuGTTA5NeRxlKEwDQYJKoZIhvcNAQENBQADggEBADrOhfRiynRKGD7EHohpPrltFScJ9+QErYMhEvteqh3C48T99uKgDY8wTqv+PI08QUSZuhmmF2d+W7aRBo3t8ZZepIXCwDaKo/oUp2h5Y9O3vyGDguq5ptgDTmPNYDCwWtdt0TtQYeLtCQTJVbYByWL0eT+KdzQOkAi48cPEOObSc9Biga7LTCcbCVPeJlYzmHDQUhzBt2jcy5BGvmZloI5SsoZvve6ug74qNq8IJMyzJzUp3kRuB0ruKIioSDi1lc783LDT3LSXyIbOGw/vHBEBY4Ax7FK8CqXJ2TsYqVsyo8QypqXDnveLcgK+PNEAhezhxC9hyV8j1I8pfF72ABE=</X509Certificate></X509Data></KeyInfo></Signature>`
-			if err != nil {
-				fmt.Println("Error opening file:", err)
-			}
 			defer xmlFile.Close()
 			xmlBytes, _ := ioutil.ReadAll(xmlFile)
 			validator := Validator{}
 			validator.SetXML(string(xmlBytes))
 			validator.SetSignature(sig)
-			err = validator.Validate()
+			err := validator.Validate()
 			Convey("Then no error occurs", func() {
 				So(err, ShouldBeNil)
 				So(validator.SigningCert().PublicKey, ShouldNotBeNil)
@@ -134,39 +85,23 @@ func TestValidate(t *testing.T) {
 		})
 
 		Convey("When Validate is called with an external certificate and root xmlns", func() {
-			xmlFile, err := os.Open("./testdata/rootxmlns.xml")
-			if err != nil {
-				fmt.Println("Error opening file:", err)
-			}
-
-			pemString, err := ioutil.ReadFile("./testdata/rootxmlns.crt")
-			if err != nil {
-				fmt.Println("Error reading certificate:", err)
-			}
-
+			xmlFile, _ := os.Open("./testdata/rootxmlns.xml")
+			pemString, _ := ioutil.ReadFile("./testdata/rootxmlns.crt")
 			pemBlock, _ := pem.Decode([]byte(pemString))
-			if pemBlock == nil {
-				fmt.Println("Error decoding certificate:", err)
-			}
-
-			cert, err := x509.ParseCertificate(pemBlock.Bytes)
-			if err != nil {
-				fmt.Println("Error parsing certificate:", err)
-			}
-
+			cert, _ := x509.ParseCertificate(pemBlock.Bytes)
 			defer xmlFile.Close()
 			xmlBytes, _ := ioutil.ReadAll(xmlFile)
 			validator := Validator{}
 			validator.SetXML(string(xmlBytes))
 			validator.Certificates = append(validator.Certificates, *cert)
-
-			err = validator.Validate()
+			err := validator.Validate()
 			Convey("Then no error occurs", func() {
 				So(err, ShouldBeNil)
 				So(validator.SigningCert().PublicKey, ShouldNotBeNil)
 			})
 		})
 	})
+
 	Convey("Given invalid signed XML", t, func() {
 		cases := map[string]string{
 			"(Changed Content)":        "./testdata/invalid-signature-changed content.xml",
@@ -191,6 +126,135 @@ func TestValidate(t *testing.T) {
 				})
 			})
 		}
+	})
+}
+
+func TestEnvelopedSignatureProcess(t *testing.T) {
+	Convey("Given a document without a Signature elemement", t, func() {
+		doc := "<doc></doc>"
+		Convey("When Process is called", func() {
+			envSig := EnvelopedSignature{}
+			_, err := envSig.Process(doc, "")
+			Convey("Then an error occurs", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "signedxml:")
+			})
+		})
+	})
+
+	Convey("Given an unparented signature element", t, func() {
+		doc := "<Signatrue></Signature>"
+		Convey("When Process is called", func() {
+			envSig := EnvelopedSignature{}
+			_, err := envSig.Process(doc, "")
+			Convey("Then an error occurs", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "signedxml:")
+			})
+		})
+	})
+}
+
+func TestSignatureDataParsing(t *testing.T) {
+	Convey("Given a document without a Signature elemement", t, func() {
+		doc := etree.NewDocument()
+		doc.CreateElement("root")
+		Convey("When parseEnvelopedSignature is called", func() {
+			sigData := signatureData{xml: doc}
+			err := sigData.parseEnvelopedSignature()
+			Convey("Then an error occurs", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "signedxml:")
+			})
+		})
+	})
+
+	Convey("Given a document without a SignedInfo elemement", t, func() {
+		doc := etree.NewDocument()
+		doc.CreateElement("root").CreateElement("Signature")
+		sigData := signatureData{xml: doc}
+		sigData.parseEnvelopedSignature()
+		Convey("When parseSignedInfo is called", func() {
+			err := sigData.parseSignedInfo()
+			Convey("Then an error occurs", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "signedxml:")
+			})
+		})
+	})
+
+	Convey("Given a document without a SignatureValue elemement", t, func() {
+		doc := etree.NewDocument()
+		doc.CreateElement("root").CreateElement("Signature")
+		sigData := signatureData{xml: doc}
+		sigData.parseEnvelopedSignature()
+		Convey("When parseSigValue is called", func() {
+			err := sigData.parseSigValue()
+			Convey("Then an error occurs", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "signedxml:")
+			})
+		})
+	})
+
+	Convey("Given a document without a SignatureMethod elemement", t, func() {
+		doc := etree.NewDocument()
+		doc.CreateElement("root").CreateElement("Signature").CreateElement("SignedInfo")
+		sigData := signatureData{xml: doc}
+		sigData.parseEnvelopedSignature()
+		sigData.parseSignedInfo()
+		Convey("When parseSigAlgorithm is called", func() {
+			err := sigData.parseSigAlgorithm()
+			Convey("Then an error occurs", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "signedxml:")
+			})
+		})
+	})
+
+	Convey("Given a document without a SignatureMethod Algorithm element", t, func() {
+		doc := etree.NewDocument()
+		doc.CreateElement("root").CreateElement("Signature").CreateElement("SignedInfo").CreateElement("SignatureMethod")
+		sigData := signatureData{xml: doc}
+		sigData.parseEnvelopedSignature()
+		sigData.parseSignedInfo()
+		Convey("When parseSigAlgorithm is called", func() {
+			err := sigData.parseSigAlgorithm()
+			Convey("Then an error occurs", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "signedxml:")
+			})
+		})
+	})
+
+	Convey("Given a document without a CanonicalizationMethod elemement", t, func() {
+		doc := etree.NewDocument()
+		doc.CreateElement("root").CreateElement("Signature").CreateElement("SignedInfo")
+		sigData := signatureData{xml: doc}
+		sigData.parseEnvelopedSignature()
+		sigData.parseSignedInfo()
+		Convey("When parseCanonAlgorithm is called", func() {
+			err := sigData.parseCanonAlgorithm()
+			Convey("Then an error occurs", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "signedxml:")
+			})
+		})
+	})
+
+	Convey("Given a document without a CanonicalizationMethod Algorithm element", t, func() {
+		doc := etree.NewDocument()
+		doc.CreateElement("root").CreateElement("Signature").CreateElement("SignedInfo").CreateElement("CanonicalizationMethod")
+		sigData := signatureData{xml: doc}
+		sigData.parseEnvelopedSignature()
+		sigData.parseSignedInfo()
+		Convey("When parseCanonAlgorithm is called", func() {
+			err := sigData.parseCanonAlgorithm()
+			Convey("Then an error occurs", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "signedxml:")
+			})
+		})
 	})
 }
 
