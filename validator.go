@@ -46,20 +46,41 @@ func (v *Validator) SigningCert() x509.Certificate {
 // Validate validates the Reference digest values, and the signature value
 // over the SignedInfo.
 //
-// If the signature is enveloped in the Validator.XML, then it will be used.
+// Deprecated: Use ValidateReferences instead
+func (v *Validator) Validate() error {
+	_, err := v.ValidateReferences()
+	return err
+}
+
+// ValidateReferences validates the Reference digest values, and the signature value
+// over the SignedInfo.
+//
+// If the signature is enveloped in the XML, then it will be used.
 // Otherwise, an external signature should be assigned using
 // Validator.SetSignature.
-func (v *Validator) Validate() error {
+//
+// The references returned by this method can be used to verify what was signed.
+func (v *Validator) ValidateReferences() ([]string, error) {
 	if err := v.loadValuesFromXML(); err != nil {
-		return err
+		return nil, err
 	}
 
-	if err := v.validateReferences(); err != nil {
-		return err
+	referenced, err := v.validateReferences()
+	if err != nil {
+		return nil, err
 	}
 
-	err := v.validateSignature()
-	return err
+	var ref []string
+	for _, doc := range referenced {
+		docStr, err := doc.WriteToString()
+		if err != nil {
+			return nil, err
+		}
+		ref = append(ref, docStr)
+	}
+
+	err = v.validateSignature()
+	return ref, err
 }
 
 func (v *Validator) loadValuesFromXML() error {
@@ -86,7 +107,7 @@ func (v *Validator) loadValuesFromXML() error {
 	return nil
 }
 
-func (v *Validator) validateReferences() (err error) {
+func (v *Validator) validateReferences() (referenced []*etree.Document, err error) {
 	references := v.signedInfo.FindElements("./Reference")
 	for _, ref := range references {
 		doc := v.xml.Copy()
@@ -94,32 +115,34 @@ func (v *Validator) validateReferences() (err error) {
 		for _, transform := range transforms.SelectElements("Transform") {
 			doc, err = processTransform(transform, doc)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 
 		doc, err = getReferencedXML(ref, doc)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
+		referenced = append(referenced, doc)
 
 		digestValueElement := ref.SelectElement("DigestValue")
 		if digestValueElement == nil {
-			return errors.New("signedxml: unable to find DigestValue")
+			return nil, errors.New("signedxml: unable to find DigestValue")
 		}
 		digestValue := digestValueElement.Text()
 
 		calculatedValue, err := calculateHash(ref, doc)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if calculatedValue != digestValue {
-			return fmt.Errorf("signedxml: Calculated digest does not match the"+
+			return nil, fmt.Errorf("signedxml: Calculated digest does not match the"+
 				" expected digestvalue of %s", digestValue)
 		}
 	}
-	return nil
+	return referenced, nil
 }
 
 func (v *Validator) validateSignature() error {
