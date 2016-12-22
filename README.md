@@ -49,9 +49,9 @@ Other packages that provide similar functionality rely on C libraries, which mak
 If your signed xml contains the signature and certificate, then you can just pass in the xml and call `Validate()`.
 ```go
 validator, err := signedxml.NewValidator(`<YourXMLString></YourXMLString>`)
-err = validator.Validate()
+xml, err = validator.ValidateReferences()
 ```
-`Validate()` verifies the DigestValue and SignatureValue in the xml document. If the error value is `nil`, then the signed xml is valid.
+`ValidateReferences()` verifies the DigestValue and SignatureValue in the xml document, and returns the signed payload(s). If the error value is `nil`, then the signed xml is valid.
 
 The x509.Certificate that was successfully used to validate the xml will be available by calling:
 ```go
