@@ -200,7 +200,7 @@ func getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outpu
 	if uri == "" {
 		outputDoc = inputDoc
 	} else {
-		path := fmt.Sprintf(".//[@ID='%s']", uri)
+		path := fmt.Sprintf(".//[@id='%s']", uri)
 		e := inputDoc.FindElement(path)
 		if e != nil {
 			outputDoc = etree.NewDocument()
