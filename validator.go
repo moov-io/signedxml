@@ -111,11 +111,12 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 	references := v.signedInfo.FindElements("./Reference")
 	for _, ref := range references {
 		doc := v.xml.Copy()
-		transforms := ref.SelectElement("Transforms")
-		for _, transform := range transforms.SelectElements("Transform") {
-			doc, err = processTransform(transform, doc)
-			if err != nil {
-				return nil, err
+		if transforms := ref.SelectElement("Transforms"); transforms != nil {
+			for _, transform := range transforms.SelectElements("Transform") {
+				doc, err = processTransform(transform, doc)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
