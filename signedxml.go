@@ -45,6 +45,7 @@ func init() {
 
 	CanonicalizationAlgorithms = map[string]CanonicalizationAlgorithm{
 		"http://www.w3.org/2000/09/xmldsig#enveloped-signature": EnvelopedSignature{},
+		"http://www.w3.org/TR/2001/REC-xml-c14n-20010315":       ExclusiveCanonicalization{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#":               ExclusiveCanonicalization{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#WithComments":   ExclusiveCanonicalization{WithComments: true},
 	}
