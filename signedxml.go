@@ -200,18 +200,26 @@ func getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outpu
 	if uri == "" {
 		outputDoc = inputDoc
 	} else {
-		path := fmt.Sprintf(".//[@ID='%s']", uri)
+		path := fmt.Sprintf(".//[@Id='%s']", uri)
 		e := inputDoc.FindElement(path)
 		if e != nil {
 			outputDoc = etree.NewDocument()
 			outputDoc.SetRoot(e.Copy())
 		} else {
-			// SAML v1.1 Assertions use AssertionID
-			path := fmt.Sprintf(".//[@AssertionID='%s']", uri)
+			// Also find ID instead of Id
+			path := fmt.Sprintf(".//[@ID='%s']", uri)
 			e := inputDoc.FindElement(path)
 			if e != nil {
 				outputDoc = etree.NewDocument()
 				outputDoc.SetRoot(e.Copy())
+			} else {
+				// SAML v1.1 Assertions use AssertionID
+				path := fmt.Sprintf(".//[@AssertionID='%s']", uri)
+				e := inputDoc.FindElement(path)
+				if e != nil {
+					outputDoc = etree.NewDocument()
+					outputDoc.SetRoot(e.Copy())
+				}
 			}
 		}
 	}
