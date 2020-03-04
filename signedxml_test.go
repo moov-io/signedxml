@@ -38,6 +38,50 @@ func TestSign(t *testing.T) {
 			})
 		})
 	})
+
+	Convey("Given an XML with custom referenceIDAttribute, certificate, and RSA key", t, func() {
+		pemString, _ := ioutil.ReadFile("./testdata/rsa.crt")
+		pemBlock, _ := pem.Decode([]byte(pemString))
+		cert, _ := x509.ParseCertificate(pemBlock.Bytes)
+
+		pemString, _ = ioutil.ReadFile("./testdata/rsa.key")
+		pemBlock, _ = pem.Decode([]byte(pemString))
+		key, _ := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
+
+		xml, _ := ioutil.ReadFile("./testdata/nosignature-custom-reference-id-attribute.xml")
+
+		Convey("When generating the signature with custom referenceIDAttribute", func() {
+			signer, _ := NewSigner(string(xml))
+			signer.SetReferenceIDAttribute("customId")
+			xmlStr, err := signer.Sign(key)
+			Convey("Then no error occurs", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("And the signature should be valid", func() {
+				validator, _ := NewValidator(xmlStr)
+				validator.Certificates = append(validator.Certificates, *cert)
+				validator.SetReferenceIDAttribute("customId")
+				err := validator.Validate()
+				So(err, ShouldBeNil)
+			})
+			Convey("And the signature should be valid, but validation fail if referenceIDAttribute NOT SET", func() {
+				validator, _ := NewValidator(xmlStr)
+				validator.Certificates = append(validator.Certificates, *cert)
+				err := validator.Validate()
+				So(err, ShouldNotBeNil)
+			})
+		})
+
+		Convey("When generating the signature referenceIDAttribute NOT SET", func() {
+			signer, _ := NewSigner(string(xml))
+			_, err := signer.Sign(key)
+			Convey("Then an error should occur", func() {
+				So(err, ShouldNotBeNil)
+			})
+		})
+
+	})
+
 }
 
 func TestValidate(t *testing.T) {

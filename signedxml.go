@@ -85,6 +85,7 @@ type signatureData struct {
 	sigValue       string
 	sigAlgorithm   x509.SignatureAlgorithm
 	canonAlgorithm CanonicalizationAlgorithm
+	refIDAttribute string
 }
 
 // SetSignature can be used to assign an external signature for the XML doc
@@ -193,14 +194,18 @@ func (s *signatureData) parseCanonAlgorithm() error {
 		"CanonicalizationMethod element")
 }
 
-func getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
+func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
 	uri := reference.SelectAttrValue("URI", "")
 	uri = strings.Replace(uri, "#", "", 1)
 	// populate doc with the referenced xml from the Reference URI
 	if uri == "" {
 		outputDoc = inputDoc
 	} else {
-		path := fmt.Sprintf(".//[@ID='%s']", uri)
+		refIDAttribute := "ID"
+		if s.refIDAttribute != "" {
+			refIDAttribute = s.refIDAttribute
+		}
+		path := fmt.Sprintf(".//[@%s='%s']", refIDAttribute, uri)
 		e := inputDoc.FindElement(path)
 		if e != nil {
 			outputDoc = etree.NewDocument()
@@ -307,9 +312,9 @@ func calculateHash(reference *etree.Element, doc *etree.Document) (string, error
 		return "", err
 	}
 
-	//ioutil.WriteFile("C:/Temp/SignedXML/Suspect.xml", docBytes, 0644)
-	//s, _ := doc.WriteToString()
-	//logger.Println(s)
+	// ioutil.WriteFile("C:/Temp/SignedXML/Suspect.xml", docBytes, 0644)
+	// s, _ := doc.WriteToString()
+	// logger.Println(s)
 
 	h.Write(docBytes)
 	d := h.Sum(nil)
