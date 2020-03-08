@@ -28,6 +28,11 @@ func NewValidator(xml string) (*Validator, error) {
 	return v, nil
 }
 
+// SetReferenceIDAttribute set the referenceIDAttribute
+func (v *Validator) SetReferenceIDAttribute(refIDAttribute string) {
+	v.signatureData.refIDAttribute = refIDAttribute
+}
+
 // SetXML is used to assign the XML document that the Validator will verify
 func (v *Validator) SetXML(xml string) error {
 	doc := etree.NewDocument()
@@ -119,7 +124,7 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 			}
 		}
 
-		doc, err = getReferencedXML(ref, doc)
+		doc, err = v.getReferencedXML(ref, doc)
 		if err != nil {
 			return nil, err
 		}

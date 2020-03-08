@@ -94,5 +94,18 @@ signedxml.CanonicalizationAlgorithms["http://myTranform"] = NoChangeCanonicaliza
 
 See `envelopedsignature.go` and `exclusivecanonicalization.go` for examples of actual implementations.
 
+### Using a custom reference ID attribute
+It is possible to set a custom reference ID attribute for both the signer and the validator. The default value is `"ID"`
+
+Signer example:
+```go
+signer.SetReferenceIDAttribute("customId")
+```
+
+Validator example:
+```go
+validator.SetReferenceIDAttribute("customId")
+```
+
 ### Contributions
 Contributions are welcome. Just fork the repo and send a pull request.

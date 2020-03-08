@@ -87,6 +87,11 @@ func (s *Signer) Sign(privateKey interface{}) (string, error) {
 	return xml, nil
 }
 
+// SetReferenceIDAttribute set the referenceIDAttribute
+func (s *Signer) SetReferenceIDAttribute(refIDAttribute string) {
+	s.signatureData.refIDAttribute = refIDAttribute
+}
+
 func (s *Signer) setDigest() (err error) {
 	references := s.signedInfo.FindElements("./Reference")
 	for _, ref := range references {
@@ -99,7 +104,7 @@ func (s *Signer) setDigest() (err error) {
 			}
 		}
 
-		doc, err := getReferencedXML(ref, doc)
+		doc, err := s.getReferencedXML(ref, doc)
 		if err != nil {
 			return err
 		}
