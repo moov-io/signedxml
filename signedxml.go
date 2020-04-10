@@ -165,13 +165,19 @@ func (s *signatureData) parseSigAlgorithm() error {
 	}
 
 	sigAlgoURI = sigMethod.SelectAttrValue("Algorithm", "")
+	if sigAlgoURI == "" {
+		return errors.New("signedxml: Unable to find Algorithm in " +
+			"SignatureMethod element")
+	}
+
 	sigAlgo, ok := signatureAlgorithms[sigAlgoURI]
 	if ok {
 		s.sigAlgorithm = sigAlgo
 		return nil
 	}
 
-	return errors.New("signedxml: Unable to find Algorithm in SignatureMethod element")
+	return errors.New("signedxml: Unsupported Algorithm " + sigAlgoURI + " in " +
+		"SignatureMethod")
 }
 
 func (s *signatureData) parseCanonAlgorithm() error {
@@ -184,14 +190,19 @@ func (s *signatureData) parseCanonAlgorithm() error {
 	}
 
 	canonAlgoURI = canonMethod.SelectAttrValue("Algorithm", "")
+	if canonAlgoURI == "" {
+		return errors.New("signedxml: Unable to find Algorithm in " +
+			"CanonicalizationMethod element")
+	}
+
 	canonAlgo, ok := CanonicalizationAlgorithms[canonAlgoURI]
 	if ok {
 		s.canonAlgorithm = canonAlgo
 		return nil
 	}
 
-	return errors.New("signedxml: Unable to find Algorithm in " +
-		"CanonicalizationMethod element")
+	return errors.New("signedxml: Unsupported Algorithm " + canonAlgoURI + " in " +
+		"CanonicalizationMethod")
 }
 
 func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
