@@ -305,3 +305,12 @@ func isWhitespace(s string) bool {
 	}
 	return true
 }
+
+func copyNamespace(namespaces map[string]string) map[string]string {
+	newVersion := map[string]string{}
+	for index, element := range namespaces {
+		newVersion[index] = element
+	}
+	return newVersion
+}
+
