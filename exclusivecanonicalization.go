@@ -209,7 +209,10 @@ func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element,
 			attr.Space != "xmlns" &&
 			!contains(prefixesInScope, attr.Space) {
 
-			nsListToRender["xmlns:"+attr.Space] = e.namespaces[attr.Space]
+			if attr.Space != "xml"{
+				nsListToRender["xmlns:"+attr.Space] = e.namespaces[attr.Space]
+			}
+
 			prefixesInScope = append(prefixesInScope, attr.Space)
 		}
 
