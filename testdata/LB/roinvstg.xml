@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EDoc>
+  <Msg ID="Edoc" Type="ROINVSTG" Version="camt.029.001.03.2019">
+    <Header>
+      <Sender>LIABLT2XMSD</Sender>
+      <Receiver>BANDLT21XXX</Receiver>
+      <Priority>51</Priority>
+      <MsgId>S182550005953387</MsgId>
+      <Date>2018-09-12T11:37:17</Date>
+      <System>LITAS-RLS</System>
+    </Header>
+    <Docs>
+      <Doc>
+        <Header>
+          <DocId>S182550005953387</DocId>
+          <Dates>
+            <Type>FormDoc</Type>
+            <Date>2018-09-12T11:37:17</Date>
+          </Dates>
+          <Type>ROINVSTG</Type>
+          <Priority>51</Priority>
+          <BusinessArea>SEPASCT</BusinessArea>
+        </Header>
+        <Roinvstg>
+          <Document>
+            <RsltnOfInvstgtn>
+              <Assgnmt>
+                <Id>S182550005953387</Id>
+                <Assgnr>
+                  <Agt>
+                    <FinInstnId>
+                      <BIC>LIABLT2XMSD</BIC>
+                    </FinInstnId>
+                  </Agt>
+                </Assgnr>
+                <Assgne>
+                  <Agt>
+                    <FinInstnId>
+                      <BIC>BANDLT21XXX</BIC>
+                    </FinInstnId>
+                  </Agt>
+                </Assgne>
+                <CreDtTm>2018-09-12T11:37:17</CreDtTm>
+              </Assgnmt>
+              <Sts>
+                <Conf>RJCR</Conf>
+              </Sts>
+              <CxlDtls>
+                <TxInfAndSts>
+                  <CxlStsId>RT01536741376723</CxlStsId>
+                  <OrgnlGrpInf>
+                    <OrgnlMsgId>FFCCTRNS</OrgnlMsgId>
+                    <OrgnlMsgNmId>pacs.008.001.02</OrgnlMsgNmId>
+                  </OrgnlGrpInf>
+                  <OrgnlEndToEndId>NOTPROVIDED</OrgnlEndToEndId>
+                  <OrgnlTxId>va001</OrgnlTxId>
+                  <TxCxlSts>RJCR</TxCxlSts>
+                  <CxlStsRsnInf>
+                    <Orgtr>
+                      <Id>
+                        <OrgId>
+                          <BICOrBEI>VAUALT21XXX</BICOrBEI>
+                        </OrgId>
+                      </Id>
+                    </Orgtr>
+                    <Rsn>
+                      <Prtry>AC04</Prtry>
+                    </Rsn>
+                  </CxlStsRsnInf>
+                  <OrgnlTxRef>
+                    <IntrBkSttlmAmt Ccy="EUR">11.00</IntrBkSttlmAmt>
+                    <IntrBkSttlmDt>2018-09-12</IntrBkSttlmDt>
+                    <SttlmInf>
+                      <SttlmMtd>CLRG</SttlmMtd>
+                      <ClrSys>
+                        <Prtry>LITAS-RLS</Prtry>
+                      </ClrSys>
+                    </SttlmInf>
+                    <PmtTpInf>
+                      <SvcLvl>
+                        <Cd>SEPA</Cd>
+                      </SvcLvl>
+                    </PmtTpInf>
+                    <Dbtr>
+                      <Nm>Bandomasis  </Nm>
+                    </Dbtr>
+                    <DbtrAcct>
+                      <Id>
+                        <IBAN>LT950100100000123456</IBAN>
+                      </Id>
+                    </DbtrAcct>
+                    <DbtrAgt>
+                      <FinInstnId>
+                        <BIC>BANDLT21XXX</BIC>
+                      </FinInstnId>
+                    </DbtrAgt>
+                    <CdtrAgt>
+                      <FinInstnId>
+                        <BIC>VAUALT21XXX</BIC>
+                      </FinInstnId>
+                    </CdtrAgt>
+                    <Cdtr>
+                      <Nm>Frodo Baggins</Nm>
+                    </Cdtr>
+                    <CdtrAcct>
+                      <Id>
+                        <IBAN>LT183070020100000030</IBAN>
+                      </Id>
+                    </CdtrAcct>
+                  </OrgnlTxRef>
+                </TxInfAndSts>
+              </CxlDtls>
+            </RsltnOfInvstgtn>
+          </Document>
+        </Roinvstg>
+      </Doc>
+    </Docs>
+  </Msg>
+  <Signature xmlns="http://www.w3.org/2000/09/xmldsig#" Id="DS_A29562927405448F894A084CA14813B7">
+    <SignedInfo>
+      <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+      <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+      <Reference URI="">
+        <Transforms>
+          <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+        </Transforms>
+        <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+        <DigestValue>E6QSUeOPHp+E6USDMrN37nL9iVQ=</DigestValue>
+      </Reference>
+      <Reference URI="#SP_A29562927405448F894A084CA14813B7" Type="http://uri.etsi.org/01903/v1.1.1#SignedProperties">
+        <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+        <DigestValue>WvY17Gcsp7aHX9M6pwl5Fgbam1k=</DigestValue>
+      </Reference>
+    </SignedInfo>
+    <SignatureValue>Pr62NMjfDtZnzRFgJq9jpZdm0230y0sYM2nv9zzs2hczTcJ3deUCfjYhlScEG3Xep9+joASRTyJLcELlxSgMFyXVxI5pTzwDbFcnH6HH1RW1K7szazL4SmLS3grcNxKY/2erhnxS/84vILVE2zRGE8rOLTenZwmy+bcKw9RTblaGQ6xTh3MKN2JkhGAOPPQAmR8G8ADb1vgpklRDaDL0GG65xq3wUOWeHkiI4LDTfEFj+YyNf1IBpdPKPecvhk3yTkX9xoHzdwNKgdXvEkDlAQv0Azxu3110+y2HAJ1EjL51UrRDuJwrSdZeSUZ6OSP7kwqA8iovlL3hIaV7ehDLQQ==</SignatureValue>
+    <ds:Object xmlns="http://uri.etsi.org/01903/v1.1.1#"
+      xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+      <QualifyingPropertiesReference URI="http://www.lb.lt/pki/cert/?8qgOegrfKqAjvODPkq7ctJm4YHc="/>
+      <QualifyingPropertiesReference URI="http://www.lb.lt/pki/crl/?pbtkpLfn47w+OFjaTZVcFmI3HCA="/>
+      <QualifyingProperties Target="#DS_A29562927405448F894A084CA14813B7">
+        <SignedProperties Id="SP_A29562927405448F894A084CA14813B7">
+          <SignedSignatureProperties>
+            <SigningTime>2018-09-12T11:37:43+03:00</SigningTime>
+            <SigningCertificate>
+              <Cert>
+                <CertDigest>
+                  <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                  <DigestValue>8qgOegrfKqAjvODPkq7ctJm4YHc=</DigestValue>
+                </CertDigest>
+                <IssuerSerial>
+                  <ds:X509IssuerName>C=LT, L=Vilnius, O=Lietuvos bankas, OU=MSD, CN=LB-LITAS-CA</ds:X509IssuerName>
+                  <ds:X509SerialNumber>347599381669548201607413</ds:X509SerialNumber>
+                </IssuerSerial>
+              </Cert>
+            </SigningCertificate>
+            <SignaturePolicyIdentifier>
+              <SignaturePolicyImplied/>
+            </SignaturePolicyIdentifier>
+          </SignedSignatureProperties>
+        </SignedProperties>
+        <UnsignedProperties>
+          <UnsignedSignatureProperties>
+            <SignatureTimeStamp>
+              <HashDataInfo uri="#DS_A29562927405448F894A084CA14813B7">
+                <Transforms>
+                  <ds:Transform Algorithm="http://www.w3.org/TR/1999/REC-xpath-19991116">
+                    <ds:XPath xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">ancestor-or-self::dsig:SignatureValue</ds:XPath>
+                  </ds:Transform>
+                </Transforms>
+              </HashDataInfo>
+              <EncapsulatedTimeStamp Id="TST_1478C7659F36C961CD3E4740E19119F7DCB95DD1">MIICaAYJKoZIhvcNAQcCoIICWTCCAlUCAQMxCzAJBgUrDgMCGgUAMGoGCyqGSIb3DQEJEAEEoFsEWTBXAgEBBgYEAM4PAQEwITAJBgUrDgMCGgUABBStpG85eOnt0jfxeHARhVrpWMbMXgIRAJi42HyeGOiFQlFK6yW/FFgYDzIwMTgwOTEyMDgzNzQzWjADAgEBMYIB1TCCAdECAQEwazBdMQswCQYDVQQGEwJMVDEQMA4GA1UEBxMHVmlsbml1czEYMBYGA1UEChMPTGlldHV2b3MgYmFua2FzMQwwCgYDVQQLEwNNU0QxFDASBgNVBAMTC0xCLUxJVEFTLUNBAgpJm/ClAAAAAAD2MAkGBSsOAwIaBQCgQTAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwIwYJKoZIhvcNAQkEMRYEFKf7Xxi5gkNFNNl/3vc0Zl6CL5TAMA0GCSqGSIb3DQEBAQUABIIBAMH2FrDenbnZ0qKJ8wqnkd2BAHX3bDm6//ILu5eERwrU5tIQSJqAZmufvzbIy06xvkNTCFCNdy/UM9wIv7oCFOJn+RGfSRD1SqdJ6o+VVXb5KdFHMOoIg9wyBDRGeJa/2MaAKC5SmbyDhlmtfy44NpOaJdW77kBI5VBmgvigh4IJsYy1T9Rjf4fTpW605Y5dA8hmMiY43tVMO1kSLdpyMe68v8OLNxp6wWhoxisLvKrgEM3dZmpXxEskzlD5xxhhsHkkYHEFUMRPPCow0fx/xpaSTNvnY+n5IYpLMG3lvzQmsd8Ct59m93z2Gvxz8eYwaAVKBV1Cnjc+AUz4Ku1APDo=</EncapsulatedTimeStamp>
+            </SignatureTimeStamp>
+          </UnsignedSignatureProperties>
+        </UnsignedProperties>
+      </QualifyingProperties>
+    </ds:Object>
+  </Signature>
+</EDoc>

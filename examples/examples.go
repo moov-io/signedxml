@@ -8,7 +8,7 @@ import (
 	"github.com/ma314smith/signedxml"
 )
 
-func main() {
+func Example_Validate() {
 	testValidator()
 	testExclCanon()
 }
