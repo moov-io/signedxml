@@ -216,9 +216,19 @@ func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etr
 		if s.refIDAttribute != "" {
 			refIDAttribute = s.refIDAttribute
 		}
-		path := fmt.Sprintf(".//[@%s='%s']", refIDAttribute, uri)
-		e := inputDoc.FindElement(path)
-		if e != nil {
+
+		// path := fmt.Sprintf(".//[@%s='%s']", refIDAttribute, uri)
+		// e := inputDoc.FindElement(path)
+		// if e != nil {
+		// 	outputDoc = etree.NewDocument()
+		// 	outputDoc.SetRoot(e.Copy())
+		if e := inputDoc.FindElement(fmt.Sprintf(".//[@%s='%s']", refIDAttribute, uri)); e != nil {
+			outputDoc = etree.NewDocument()
+			outputDoc.SetRoot(e.Copy())
+		} else if e := inputDoc.FindElement(fmt.Sprintf(".//[@%s='%s']", strings.ToLower(refIDAttribute), uri)); e != nil {
+			outputDoc = etree.NewDocument()
+			outputDoc.SetRoot(e.Copy())
+		} else if e := inputDoc.FindElement(fmt.Sprintf(".//[@%s='%s']", strings.Title(strings.ToLower(refIDAttribute)), uri)); e != nil {
 			outputDoc = etree.NewDocument()
 			outputDoc.SetRoot(e.Copy())
 		} else {
