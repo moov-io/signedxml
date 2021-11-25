@@ -1,4 +1,4 @@
-module signedxml
+module github.com/daugminas/signedxml
 
 go 1.17
 
