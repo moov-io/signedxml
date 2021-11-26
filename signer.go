@@ -111,7 +111,8 @@ func (s *Signer) setDigest() (err error) {
 			return err
 		}
 
-		calculatedValue, err := calculateHash(ref, doc)
+		// calculatedValue, err := calculateHash(ref, doc)
+		calculatedValue, err := CalculateHashAnything(ref, doc)
 		if err != nil {
 			return err
 		}

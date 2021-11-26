@@ -137,7 +137,8 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 		}
 		digestValue := digestValueElement.Text()
 
-		calculatedValue, err := calculateHash(ref, doc)
+		// calculatedValue, err := calculateHash(ref, doc)
+		calculatedValue, err := CalculateHashAnything(ref, doc)
 		if err != nil {
 			return nil, err
 		}

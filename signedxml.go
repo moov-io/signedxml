@@ -353,3 +353,47 @@ func calculateHash(reference *etree.Element, doc *etree.Document) (string, error
 
 	return calculatedValue, nil
 }
+
+// calculates a hash of a TargetToBeHashed (*etree.Document or []byte), detecting
+// the hash algorithm in the reference element. If successful, hash digest value in
+// base64 encoded string is written to the reference element/DigestValue tag.
+func CalculateHashAnything(reference *etree.Element, targetToBeHashed interface{}) (string, error) {
+	digestMethodElement := reference.SelectElement("DigestMethod")
+	if digestMethodElement == nil {
+		return "", errors.New("signedxml: unable to find DigestMethod")
+	}
+
+	digestMethodURI := digestMethodElement.SelectAttrValue("Algorithm", "")
+	if digestMethodURI == "" {
+		return "", errors.New("signedxml: unable to find Algorithm in DigestMethod")
+	}
+
+	digestAlgo, ok := hashAlgorithms[digestMethodURI]
+	if !ok {
+		return "", fmt.Errorf("signedxml: unable to find matching hash"+
+			"algorithm for %s in hashAlgorithms", digestMethodURI)
+	}
+
+	var targetBytes []byte
+	var err error
+	switch v := targetToBeHashed.(type) {
+	case *etree.Document:
+		v.WriteSettings.CanonicalEndTags = true
+		v.WriteSettings.CanonicalText = true
+		v.WriteSettings.CanonicalAttrVal = true
+		targetBytes, err = v.WriteToBytes()
+		if err != nil {
+			return "", err
+		}
+
+	case []byte:
+		targetBytes = v
+	}
+
+	h := digestAlgo.New()                                   // hasher
+	h.Write(targetBytes)                                    // calculate hash
+	d := h.Sum(nil)                                         // digest
+	calculatedValue := base64.StdEncoding.EncodeToString(d) // digest in base64
+
+	return calculatedValue, nil
+}
