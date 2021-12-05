@@ -106,13 +106,40 @@ func (s *Signer) setDigest() (err error) {
 			}
 		}
 
-		doc, err := s.getReferencedXML(ref, doc)
+		targetDoc, err := s.getReferencedXML(ref, doc)
 		if err != nil {
 			return err
 		}
 
+		// Xades customization: when making a digest of sub-root element (ex: SignedProperties),
+		// we need a) add releant namespaces to it; b) canonicalize it BEFORE calculating its digest
+		if targetDoc.Root().Tag != s.xml.Root().Tag {
+
+			// if targetDoc element is not root (i.e, root sub-tag or child) being "digested",
+			// then populate with relevant namespaces
+			err = PopulateElementWithNameSpaces(targetDoc.Root(), s.xml.Copy())
+			if err != nil {
+				return err
+			}
+
+			// canonicalize
+			targetDoc.WriteSettings.CanonicalAttrVal = true
+			targetDoc.WriteSettings.CanonicalEndTags = true
+			targetDoc.WriteSettings.CanonicalText = true
+			targetStr, err := targetDoc.WriteToString()
+			if err != nil {
+				return err
+			}
+			canonStr, err := s.canonAlgorithm.Process(targetStr, "")
+			if err != nil {
+				return err
+			}
+			targetDoc = etree.NewDocument()
+			targetDoc.ReadFromString(canonStr)
+		}
+
 		// calculatedValue, err := calculateHash(ref, doc)
-		calculatedValue, err := CalculateHashAnything(ref, doc)
+		calculatedValue, err := CalculateHashAnything(ref, targetDoc)
 		if err != nil {
 			return err
 		}
@@ -139,7 +166,7 @@ func (s *Signer) setSignature() error {
 		return err
 	}
 
-	var hashed, signature []byte
+	var digest, signature []byte
 	//var h1, h2 *big.Int
 	signingAlgorithm, ok := signingAlgorithms[s.sigAlgorithm]
 	if !ok {
@@ -148,16 +175,17 @@ func (s *Signer) setSignature() error {
 
 	hasher := signingAlgorithm.hash.New()
 	hasher.Write([]byte(canonSignedInfo))
-	hashed = hasher.Sum(nil)
+	digest = hasher.Sum(nil)
 
 	switch signingAlgorithm.algorithm {
 	case "rsa":
-		signature, err = rsa.SignPKCS1v15(rand.Reader, s.privateKey.(*rsa.PrivateKey), signingAlgorithm.hash, hashed)
+		// "RSASSA-PKCS1-v1_5" as in Section 8.2 of RFC8017 (https://tools.ietf.org/html/rfc8017)
+		signature, err = rsa.SignPKCS1v15(rand.Reader, s.privateKey.(*rsa.PrivateKey), signingAlgorithm.hash, digest)
 		/*
 			case "dsa":
-				h1, h2, err = dsa.Sign(rand.Reader, s.privateKey.(*dsa.PrivateKey), hashed)
+				h1, h2, err = dsa.Sign(rand.Reader, s.privateKey.(*dsa.PrivateKey), digest)
 			case "ecdsa":
-				h1, h2, err = ecdsa.Sign(rand.Reader, s.privateKey.(*ecdsa.PrivateKey), hashed)
+				h1, h2, err = ecdsa.Sign(rand.Reader, s.privateKey.(*ecdsa.PrivateKey), digest)
 		*/
 	}
 	if err != nil {

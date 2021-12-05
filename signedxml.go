@@ -152,6 +152,15 @@ func (s *signatureData) parseSignedInfo() error {
 		}
 	}
 
+	// It is adding <Root> tag namespaces, even if it wasn't used in SignedInfo - mistake.
+	// Solution: add all namespaces, which are used in the SignedInfo child tags
+	// signedInfoDoc, err := populateElementWithNameSpaces(s.signedInfo, s.xml.Copy())
+	// if err != nil {
+	// 	return err
+	// }
+	// s.signedInfo.Parent().AddChild(signedInfoDoc.Root())
+	// s.signedInfo.Parent().RemoveChildAt(0) // old signedInfo
+
 	return nil
 }
 
@@ -396,4 +405,117 @@ func CalculateHashAnything(reference *etree.Element, targetToBeHashed interface{
 	calculatedValue := base64.StdEncoding.EncodeToString(d) // digest in base64
 
 	return calculatedValue, nil
+}
+
+// Copies all namespaces that related to the targetElement. It must have the following namespaces:
+// - own namespaces (if it defines such): nothing todo here, typically, they're defined in attributes of that element;
+// - if the element has a prefix, but no definition for it, then parent has this namespace defined;
+// - if any of the sub-elementas have a prefix, which is different from targetElement, then some parent must define it.
+// Needed before canonicalizing and calculating hash of the target Element.
+// TargetElem is always a sub-tag (child) of RootDoc
+func PopulateElementWithNameSpaces(targetElem *etree.Element, rootDoc *etree.Document) (err error) { //(outputDoc *etree.Document, err error) {
+
+	// check that targetElem is a child of rootDoc
+	if rootDoc.FindElement(".//"+targetElem.Tag) != nil {
+
+		// Step 1: cycle through all prefixes used in the targetElement,
+		// these will be namespace definitions we'll have to have in the element
+		nsDefinitions := getUsedPrefixes(targetElem)
+
+		// Step 2: starting with the targetElem, work up the path until all
+		// prefix keys (namespace names) have their corresponding definitions collected
+		nsDefinitions = getNameSpaceDefinitions(nsDefinitions, targetElem, rootDoc)
+
+		// Step 3: populate the targetElem with the namespaces, relevant for it
+		// t := targetElem.Copy()
+		// for k, v := range nsDefinitions {
+		// 	if v != "" {
+		// 		if k != "" {
+		// 			t.CreateAttr("xmlns:"+k, v)
+		// 		} else {
+		// 			t.CreateAttr("xmlns", v)
+		// 		}
+		// 	}
+		// }
+		// outputDoc = etree.NewDocument()
+		// outputDoc.SetRoot(t)
+		setNSDefinitionsDynamically(targetElem, nsDefinitions, []string{})
+
+	} else if targetElem.FullTag() == rootDoc.FullTag() {
+		targetElem = rootDoc.Root()
+	} else {
+		err = errors.New("targetElem is not in the rootDoc, cannot copy namespaces")
+	}
+
+	return
+}
+
+func setNSDefinitionsDynamically(el *etree.Element, nsdef map[string]string, parentPrefixes []string) {
+
+	if el.Space != "" && !isInArray(el.Space, parentPrefixes) {
+		el.CreateAttr("xmlns:"+el.Space, nsdef[el.Space])
+		parentPrefixes = append(parentPrefixes, el.Space)
+	}
+
+	for _, c := range el.ChildElements() {
+		setNSDefinitionsDynamically(c, nsdef, parentPrefixes)
+	}
+}
+
+func isInArray(item string, array []string) bool {
+	for _, i := range array {
+		if item == i {
+			return true
+		}
+	}
+	return false
+}
+
+// returns a map, where its keys are the unique prefixes used in the
+// element and its children
+func getUsedPrefixes(el *etree.Element) (outMap map[string]string) {
+	// Space is element tag prefix. If it's emtpy, then this element has root namespace.
+	// if it's not empty, then it's defined somewhere up the element path.
+
+	outMap = map[string]string{}
+	outMap[el.Space] = "" // process element prefix
+	for _, c := range el.ChildElements() {
+		childMap := getUsedPrefixes(c) // process its children prefixes
+		for k, v := range childMap {
+			outMap[k] = v
+		}
+	}
+	return outMap
+}
+
+// takes a map of prefixes and cycles up the path from the element to
+// collect its definitions
+func getNameSpaceDefinitions(prefixMap map[string]string, el *etree.Element, rootDoc *etree.Document) (outMap map[string]string) {
+	var weHaveUnfilledValues bool
+
+	for k, v := range prefixMap {
+		if v == "" {
+			weHaveUnfilledValues = true
+			if attr := el.SelectAttr(k); attr != nil {
+				prefixMap[k] = attr.Value
+			} else if attr := el.SelectAttr("xmlns:" + k); attr != nil {
+				prefixMap[k] = attr.Value
+			} else if attr := el.SelectAttr("xmlns"); attr != nil { // root NS
+				if _, ok := prefixMap[""]; ok { // make sure non-prefixed tags were in element
+					prefixMap[""] = attr.Value
+				}
+			}
+		}
+	}
+	upNext := rootDoc.FindElement(".//" + el.Tag).Parent()
+	if weHaveUnfilledValues && upNext != nil {
+		parentMap := getNameSpaceDefinitions(prefixMap, upNext, rootDoc)
+		for k, v := range parentMap {
+			if prefixMap[k] == "" && v != "" {
+				prefixMap[k] = v
+			}
+		}
+	}
+	outMap = prefixMap
+	return
 }
