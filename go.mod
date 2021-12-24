@@ -5,7 +5,6 @@ go 1.17
 require (
 	github.com/beevik/etree v1.1.0
 	github.com/lestrrat-go/libxml2 v0.0.0-20201123224832-e6d9de61b80d
-	github.com/ma314smith/signedxml v0.0.0-20210628192057-abc5b481ae1c
 	github.com/smartystreets/goconvey v1.7.2
 )
 

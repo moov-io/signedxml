@@ -5,12 +5,14 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/ma314smith/signedxml"
+	"github.com/daugminas/signedxml"
 )
 
 func main() {
-	testValidator()
-	testExclCanon()
+	// testValidator()
+	// testExclCanon()
+	testLBmsgValidator()
+	// testOwnSignedDocValidator()
 }
 
 func testValidator() {

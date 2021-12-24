@@ -8,8 +8,6 @@ github.com/jtolds/gls v4.20.0+incompatible h1:xdiiI2gbIgH/gLH7ADydsJ1uDOEzR8yvV7
 github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/lestrrat-go/libxml2 v0.0.0-20201123224832-e6d9de61b80d h1:7uUkdtm6TC3olmG0I9lIAwBJQianl8YT5H8zcw6Mkpk=
 github.com/lestrrat-go/libxml2 v0.0.0-20201123224832-e6d9de61b80d/go.mod h1:fy/ZVbgyB83mtricxwSW3zqIRXWOVpKG2PvdUDFeC58=
-github.com/ma314smith/signedxml v0.0.0-20210628192057-abc5b481ae1c h1:UPJygtyk491bJJ/DnRJFuzcq9Dl9NSeFrJ7VdiRzMxc=
-github.com/ma314smith/signedxml v0.0.0-20210628192057-abc5b481ae1c/go.mod h1:KEgVcb43+f5KFUH/x6Vd3NROG0AIL2CuKMrIqYsmx6E=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

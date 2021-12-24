@@ -1,0 +1,103 @@
+<Signature Id="Signature" xmlns="http://www.w3.org/2000/09/xmldsig#">
+    <SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+        <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+        <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+        <Reference URI="#object">
+            <Transforms>
+                
+                <Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+            </Transforms>
+            <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+            <DigestValue>6nrkIDCAyh2Du9fWPgKcVypthej0Bha4eGHpfQhk6po=</DigestValue>
+        </Reference>
+        <Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#SignedProperties">
+            <Transforms>
+                <Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+            </Transforms>
+            <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+            <DigestValue>CpQxQCc3YHn1JZsKxU3bW4VOO4aRXbIITRosIDhREsw=</DigestValue>
+        </Reference>
+    </SignedInfo>
+    <SignatureValue>UDQDg6OPj37bd5XllzA0Nx/l/p180xWwEDrLxYqZZNGHRN5LMxmkJI4KeXnGxZatjSqqHcATTS3W5wM47LtmB8aYQJiWnmjsZytDuP++ecs8LbiBjNKSX/9SzcaOhXTIRUDboUDBWi56dNL5B2pMF8yh3V1aeKF4v9Pi4rDzhtvZ3DrghZMnWgqZ2iOkZztHTdIqjpX9VrmsdPYsJKUGTKRkZ+bhImRPdQgCaA7VAdcpaEWGAE9Gl6p85GTEy+FTSINMvbXAXTT2hBHz96p70no6kkDiRU/Ua7+C4Z2LzZ+COc/K/9ay9IBseXUAIhWzPCwzRR6VZolSQaZqt42oow==</SignatureValue>
+    <KeyInfo><X509Data><X509Certificate>MIID2TCCAsGgAwIBAgIUEEnabJkXk0Cflcvmaw/J1dZqct8wDQYJKoZIhvcNAQELBQAwTjELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExEjAQBgNVBAcMCVRoZSBDbG91ZDEWMBQGA1UECgwNTXkgQ29tcGFueSBDQTAeFw0yMTExMjExMjQxMThaFw0yMjAzMjExMjQxMThaMIGNMQswCQYDVQQGEwJMVDESMBAGA1UECAwJTGl0aHVhbmlhMRIwEAYDVQQHDAlUaGUgQ2xvdWQxDTALBgNVBAoMBERlbW8xFTATBgNVBAMMDFNpZ25pbmcgY2VydDEwMC4GCgmSJomT8ixkARkWIGxvY2FsaG9zdC9lbWFpbEFkZHJlc3M9c2RAc2RmLmZmMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwLBaiVFQg8xTW7NTcCre7hy2yEKgZmGeESsUMOufOd0Hp7xraYp/CuTj8fptHHqFcIqdI520Br17WESWe5WM5XxkA/eWAmN3hBbi5lUM5b9w/KwAkq8RHBZaq+vHwVAFMnlZMBWRz2R5PcQ2NyJj0YBgImJImhm7KllkKvuLLXNqjYYp7S4n/lXbPHOYA28PeJlPLYe4Wbpe18aGoGRaag9PK4oR4tX1rHjtcAWf8u7NmJX56/6xRl15qsMngTNJKu6mxMDd5i9X1xDNRzVN7uTlK9CBqmq+aflDLCnSpiZX/W3AazOpJm5Cm1f8vqOX8XnJ6DIWUREnZ/IU2CT7dwIDAQABo28wbTAMBgNVHRMBAf8EAjAAMB0GA1UdDgQWBBRd2sKVueUBgVKqiiwOOZ93E7Kw+jALBgNVHQ8EBAMCBeAwMQYDVR0lBCowKAYIKwYBBQUHAwIGCCsGAQUFBwMJBggrBgEFBQcDAwYIKwYBBQUHAwgwDQYJKoZIhvcNAQELBQADggEBAIKoE6AXe2akNOPeVvGWc4BaATm8M/E+UqjkD0j6hPlQJeJBEPZfFYxqSG1egK6LkvA7cZei1gFqrKbHwyrnda8fiLB+0TkgQKJGU427GFSSaAHtqY1nSsXcDTTQCsjvIY9BzYzcfdD7grYzvBdCuhwU7Wtki6RX6cVKK08HlO+k+CN8/bo0SAns8STGluFLP7RwR6U0bHXOGQJoFetJZ2+jj1NfuCkolrV1qWzhdznxvrD9j/BAaPi8kiMHbApF2NpQkP/vLWqYVPp0z4WEZ2UpFUWPAfVXOnRDSFpTGEdmeXdbPsR2/QsM41WZqSe6zDv+zISMpwgmuKbkhthK7gc=</X509Certificate></X509Data></KeyInfo>
+    <Object>
+        <xades:QualifyingProperties Target="#Signature" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#">
+            <xades:SignedProperties Id="SignedProperties">
+                <xades:SignedSignatureProperties>
+                    <xades:SigningTime>2021-12-19T21:47:25.591Z</xades:SigningTime>
+                    <xades:SigningCertificate>
+                        <xades:Cert>
+                            <xades:CertDigest>
+                                <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                                <DigestValue>z6Te8U9MUPFnKUKBB1IiYAxfWD0=</DigestValue>
+                            </xades:CertDigest>
+                            <xades:IssuerSerial>
+                                <X509IssuerName>O=My Company CA,L=The Cloud,ST=California,C=US</X509IssuerName>
+                                <X509SerialNumber>92990834164997211889227204231006993513378902751</X509SerialNumber>
+                            </xades:IssuerSerial>
+                        </xades:Cert>
+                    </xades:SigningCertificate>
+                    <xades:SignaturePolicyIdentifier>
+                        <xades:SignaturePolicyImplied/>
+                    </xades:SignaturePolicyIdentifier>
+                </xades:SignedSignatureProperties>
+            </xades:SignedProperties>
+        </xades:QualifyingProperties>
+    </Object>
+<Object Id="object">
+<Document>
+    <FIToFICstmrCdtTrf>
+        <GrpHdr>
+            <MsgId>3408f3caf90d4fceafac322ab3f3f870</MsgId>
+            <CreDtTm>2021-04-20T18:21:43</CreDtTm>
+            <NbOfTxs>1</NbOfTxs>
+            <TtlIntrBkSttlmAmt Ccy="EUR">170.06</TtlIntrBkSttlmAmt>
+            <IntrBkSttlmDt>2021-04-20</IntrBkSttlmDt>
+            <SttlmInf>
+                <SttlmMtd>INGA</SttlmMtd>
+                <ClrSys>
+                    <Prtry>INTRAGROUP</Prtry>
+                </ClrSys>
+            </SttlmInf>
+        </GrpHdr>
+        <CdtTrfTxInf>
+            <PmtId>
+                <EndToEndId>NOTPROVIDED</EndToEndId>
+                <TxId>5bab4907dc98463a8b305f68812bad42</TxId>
+            </PmtId>
+            <IntrBkSttlmAmt Ccy="EUR">170.06</IntrBkSttlmAmt>
+            <ChrgBr>SLEV</ChrgBr>
+            <Dbtr>
+                <Nm>Tadeush Blindewski</Nm>
+            </Dbtr>
+            <DbtrAcct>
+                <Id>
+                    <IBAN>LT372140000000000001</IBAN>
+                </Id>
+            </DbtrAcct>
+            <DbtrAgt>
+                <FinInstnId>
+                    <BIC>AGBLLT2XXXX</BIC>
+                </FinInstnId>
+            </DbtrAgt>
+            <CdtrAgt>
+                <FinInstnId>
+                    <BIC>CBSBLT26XXX</BIC>
+                </FinInstnId>
+            </CdtrAgt>
+            <Cdtr>
+                <Nm>Иван Царевич</Nm>
+            </Cdtr>
+            <CdtrAcct>
+                <Id>
+                    <IBAN>LT497181600000000002</IBAN>
+                </Id>
+            </CdtrAcct>
+            <RmtInf>
+                <Ustrd>А, уж ка тас паведимас? Вистэк ачу.</Ustrd>
+            </RmtInf>
+        </CdtTrfTxInf>
+    </FIToFICstmrCdtTrf>
+</Document>
+</Object>
+</Signature>
