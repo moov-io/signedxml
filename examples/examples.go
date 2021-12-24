@@ -11,8 +11,8 @@ import (
 func main() {
 	// testValidator()
 	// testExclCanon()
-	testLBmsgValidator()
-	// testOwnSignedDocValidator()
+	// testLBmsgValidator()
+	testOwnSignedDocValidator()
 }
 
 func testValidator() {

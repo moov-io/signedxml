@@ -153,6 +153,15 @@ func (s *signatureData) parseSignedInfo() error {
 		}
 	}
 
+	// It is adding <Root> tag namespaces, even if it wasn't used in SignedInfo - mistake.
+	// Solution: add all namespaces, which are used in the SignedInfo child tags
+	// signedInfoDoc, err := populateElementWithNameSpaces(s.signedInfo, s.xml.Copy())
+	// if err != nil {
+	// 	return err
+	// }
+	// s.signedInfo.Parent().AddChild(signedInfoDoc.Root())
+	// s.signedInfo.Parent().RemoveChildAt(0) // old signedInfo
+
 	return nil
 }
 
@@ -528,7 +537,6 @@ func getUsedPrefixes(el *etree.Element) (outMap map[string]string) {
 
 	outMap = map[string]string{}
 	outMap[el.Space] = "" // process element prefix
-
 	for _, c := range el.ChildElements() {
 		childMap := getUsedPrefixes(c) // process its children prefixes
 		for k, v := range childMap {
