@@ -10,9 +10,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/beevik/etree"
 )
@@ -406,16 +404,16 @@ func CalculateHashFromRef(reference *etree.Element, targetToBeHashed interface{}
 	}
 
 	// debug
-	fn := strconv.FormatInt(time.Now().UnixNano(), 10) + ".xml" // unix-time based filename
-	f, err := os.Create(fn)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-	_, err = f.Write(targetBytes)
-	if err != nil {
-		panic(err)
-	}
+	// fn := strconv.FormatInt(time.Now().UnixNano(), 10) + ".xml" // unix-time based filename
+	// f, err := os.Create(fn)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer f.Close()
+	// _, err = f.Write(targetBytes)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	h := digestAlgo.New()                                   // hasher
 	h.Write(targetBytes)                                    // calculate hash
