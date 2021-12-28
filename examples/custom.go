@@ -12,7 +12,10 @@ import (
 func testLBmsgValidator() {
 
 	// read xml file
-	xmlFile, err := os.Open("../testdata/LB/ilpnot.xml")
+	// xmlFile, err := os.Open("../testdata/LB/ilpnot.xml")
+	xmlFile, err := os.Open("../testdata/LB/iltsoinf.xml")
+	// xmlFile, err := os.Open("../testdata/LB/roinvstg.xml")
+	// xmlFile, err := os.Open("../testdata/LB/rsltnofinvstgtn.xml")
 	if err != nil {
 		panic(err)
 	}
