@@ -64,7 +64,8 @@ func (v *Validator) Validate() error {
 // Otherwise, an external signature should be assigned using
 // Validator.SetSignature.
 //
-// The references returned by this method can be used to verify what was signed.
+// The references returned contain validated XML from the signature and must be used.
+// Callers that ignore the returned references are vulnerable to XML injection.
 func (v *Validator) ValidateReferences() ([]string, error) {
 	if err := v.loadValuesFromXML(); err != nil {
 		return nil, err
