@@ -47,6 +47,16 @@ func init() {
 		"http://www.w3.org/2000/09/xmldsig#enveloped-signature": EnvelopedSignature{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#":               ExclusiveCanonicalization{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#WithComments":   ExclusiveCanonicalization{WithComments: true},
+
+		// xmllib2 canonicalizers, added:
+		// "http://www.w3.org/TR/xml-c14n":                                C14N10Canonicalizer{},
+		// "http://www.w3.org/TR/xml-c14n#WithComments":                   C14N10Canonicalizer{WithComments: true},
+		"http://www.w3.org/TR/2001/REC-xml-c14n-20010315":              C14N10Canonicalizer{},
+		"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments": C14N10Canonicalizer{WithComments: true},
+		// "http://www.w3.org/TR/xml-exc-c14n":                            C14N10ExclusiveCanonicalizer{},
+		// "http://www.w3.org/TR/xml-exc-c14n#WithComments":               C14N10ExclusiveCanonicalizer{WithComments: true},
+		"http://www.w3.org/2006/12/xml-c14n11":              C14N11Canonicalizer{},
+		"http://www.w3.org/2006/12/xml-c14n11#WithComments": C14N11Canonicalizer{WithComments: true},
 	}
 }
 
