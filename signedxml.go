@@ -48,7 +48,9 @@ func init() {
 		"http://www.w3.org/2000/09/xmldsig#enveloped-signature": EnvelopedSignature{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#":               ExclusiveCanonicalization{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#WithComments":   ExclusiveCanonicalization{WithComments: true},
-		dsig.CanonicalXML10RecAlgorithmId.String():              &c14N10RecCanonicalizer{WithComments: false},
+		dsig.CanonicalXML11AlgorithmId.String():                 &c14N11Canonicalizer{},
+		dsig.CanonicalXML11WithCommentsAlgorithmId.String():     &c14N11Canonicalizer{WithComments: true},
+		dsig.CanonicalXML10RecAlgorithmId.String():              &c14N10RecCanonicalizer{},
 		dsig.CanonicalXML10WithCommentsAlgorithmId.String():     &c14N10RecCanonicalizer{WithComments: true},
 	}
 }
