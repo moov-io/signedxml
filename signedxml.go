@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/beevik/etree"
+	dsig "github.com/russellhaering/goxmldsig"
 )
 
 var logger = log.New(os.Stdout, "DEBUG-SIGNEDXML: ", log.Ldate|log.Ltime|log.Lshortfile)
@@ -47,6 +48,8 @@ func init() {
 		"http://www.w3.org/2000/09/xmldsig#enveloped-signature": EnvelopedSignature{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#":               ExclusiveCanonicalization{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#WithComments":   ExclusiveCanonicalization{WithComments: true},
+		dsig.CanonicalXML10RecAlgorithmId.String():              &c14N10RecCanonicalizer{WithComments: false},
+		dsig.CanonicalXML10WithCommentsAlgorithmId.String():     &c14N10RecCanonicalizer{WithComments: true},
 	}
 }
 
