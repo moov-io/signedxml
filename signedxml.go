@@ -65,6 +65,7 @@ func init() {
 // no child elements in Transform (or CanonicalizationMethod), then an empty
 // string will be passed through.
 type CanonicalizationAlgorithm interface {
+	ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error)
 	Process(inputXML string, transformXML string) (outputXML string, err error)
 }
 
@@ -73,9 +74,10 @@ type CanonicalizationAlgorithm interface {
 // CanonicalizationAlgorithm interface.
 //
 // Implementations are provided for the following transforms:
-//  http://www.w3.org/2001/10/xml-exc-c14n# (ExclusiveCanonicalization)
-//  http://www.w3.org/2001/10/xml-exc-c14n#WithComments (ExclusiveCanonicalizationWithComments)
-//  http://www.w3.org/2000/09/xmldsig#enveloped-signature (EnvelopedSignature)
+//
+//	http://www.w3.org/2001/10/xml-exc-c14n# (ExclusiveCanonicalization)
+//	http://www.w3.org/2001/10/xml-exc-c14n#WithComments (ExclusiveCanonicalizationWithComments)
+//	http://www.w3.org/2000/09/xmldsig#enveloped-signature (EnvelopedSignature)
 //
 // Custom implementations can be added to the map
 var CanonicalizationAlgorithms map[string]CanonicalizationAlgorithm
@@ -285,12 +287,7 @@ func processTransform(transform *etree.Element,
 		}
 	}
 
-	docString, err := docIn.WriteToString()
-	if err != nil {
-		return nil, err
-	}
-
-	docString, err = transformAlgo.Process(docString, transformContent)
+	docString, err := transformAlgo.ProcessElement(docIn.Root(), transformContent)
 	if err != nil {
 		return nil, err
 	}

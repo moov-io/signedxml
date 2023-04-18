@@ -13,15 +13,15 @@ import (
 )
 
 func TestSign(t *testing.T) {
+	pemString, _ := ioutil.ReadFile("./testdata/rsa.crt")
+	pemBlock, _ := pem.Decode([]byte(pemString))
+	cert, _ := x509.ParseCertificate(pemBlock.Bytes)
+
+	pemString, _ = ioutil.ReadFile("./testdata/rsa.key")
+	pemBlock, _ = pem.Decode([]byte(pemString))
+	key, _ := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
+
 	Convey("Given an XML, certificate, and RSA key", t, func() {
-		pemString, _ := ioutil.ReadFile("./testdata/rsa.crt")
-		pemBlock, _ := pem.Decode([]byte(pemString))
-		cert, _ := x509.ParseCertificate(pemBlock.Bytes)
-
-		pemString, _ = ioutil.ReadFile("./testdata/rsa.key")
-		pemBlock, _ = pem.Decode([]byte(pemString))
-		key, _ := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
-
 		xml, _ := ioutil.ReadFile("./testdata/nosignature.xml")
 
 		Convey("When generating the signature", func() {
@@ -39,15 +39,25 @@ func TestSign(t *testing.T) {
 		})
 	})
 
+	Convey("Given an XML with http://www.w3.org/TR/2001/REC-xml-c14n-20010315 canonicalization, certificate, and RSA key", t, func() {
+		xml, _ := ioutil.ReadFile("./testdata/nosignature2.xml")
+
+		Convey("When generating the signature", func() {
+			signer, _ := NewSigner(string(xml))
+			xmlStr, err := signer.Sign(key)
+			Convey("Then no error occurs", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("And the signature should be valid", func() {
+				validator, _ := NewValidator(xmlStr)
+				validator.Certificates = append(validator.Certificates, *cert)
+				err := validator.Validate()
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+
 	Convey("Given an XML with custom referenceIDAttribute, certificate, and RSA key", t, func() {
-		pemString, _ := ioutil.ReadFile("./testdata/rsa.crt")
-		pemBlock, _ := pem.Decode([]byte(pemString))
-		cert, _ := x509.ParseCertificate(pemBlock.Bytes)
-
-		pemString, _ = ioutil.ReadFile("./testdata/rsa.key")
-		pemBlock, _ = pem.Decode([]byte(pemString))
-		key, _ := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
-
 		xml, _ := ioutil.ReadFile("./testdata/nosignature-custom-reference-id-attribute.xml")
 
 		Convey("When generating the signature with custom referenceIDAttribute", func() {

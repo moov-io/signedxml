@@ -152,14 +152,7 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 }
 
 func (v *Validator) validateSignature() error {
-	doc := etree.NewDocument()
-	doc.SetRoot(v.signedInfo.Copy())
-	signedInfo, err := doc.WriteToString()
-	if err != nil {
-		return err
-	}
-
-	canonSignedInfo, err := v.canonAlgorithm.Process(signedInfo, "")
+	canonSignedInfo, err := v.canonAlgorithm.ProcessElement(v.signedInfo, "")
 	if err != nil {
 		return err
 	}

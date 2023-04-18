@@ -124,14 +124,7 @@ func (s *Signer) setDigest() (err error) {
 }
 
 func (s *Signer) setSignature() error {
-	doc := etree.NewDocument()
-	doc.SetRoot(s.signedInfo.Copy())
-	signedInfo, err := doc.WriteToString()
-	if err != nil {
-		return err
-	}
-
-	canonSignedInfo, err := s.canonAlgorithm.Process(signedInfo, "")
+	canonSignedInfo, err := s.canonAlgorithm.ProcessElement(s.signedInfo, "")
 	if err != nil {
 		return err
 	}
