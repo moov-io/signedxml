@@ -12,10 +12,8 @@ import (
 // algorithm
 type EnvelopedSignature struct{}
 
-// ProcessElement is called to transfrom the XML using the EnvelopedSignature
-// algorithm
 func (e EnvelopedSignature) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
-	transformedXML, err := e.processElement(inputXML, transformXML)
+	transformedXML, err := e.processElement(inputXML.Copy(), transformXML)
 	if err != nil {
 		return "", err
 	}
@@ -30,13 +28,10 @@ func (e EnvelopedSignature) ProcessElement(inputXML *etree.Element, transformXML
 	return docString, nil
 }
 
-// Process is called to transfrom the XML using the EnvelopedSignature
-// algorithm. Retained for backward compatability. Use ProcessElement if
-// possible.
 func (e EnvelopedSignature) ProcessDocument(doc *etree.Document,
 	transformXML string) (outputXML string, err error) {
 
-	transformedRoot, err := e.processElement(doc.Root(), transformXML)
+	transformedRoot, err := e.processElement(doc.Root().Copy(), transformXML)
 	if err != nil {
 		return "", err
 	}
@@ -59,8 +54,7 @@ func (e EnvelopedSignature) Process(inputXML string, transformXML string) (outpu
 }
 
 func (e EnvelopedSignature) processElement(inputXML *etree.Element, transformXML string) (outputXML *etree.Element, err error) {
-	inputXMLCopy := inputXML.Copy()
-	sig := inputXMLCopy.FindElement(".//Signature")
+	sig := inputXML.FindElement(".//Signature")
 	if sig == nil {
 		return nil, errors.New("signedxml: unable to find Signature node")
 	}
@@ -71,5 +65,5 @@ func (e EnvelopedSignature) processElement(inputXML *etree.Element, transformXML
 		return nil, errors.New("signedxml: unable to remove Signature element")
 	}
 
-	return inputXMLCopy, nil
+	return inputXML, nil
 }

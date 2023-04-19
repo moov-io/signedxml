@@ -52,10 +52,9 @@ type ExclusiveCanonicalization struct {
 // ProcessElement is called to transfrom the XML using the ExclusiveCanonicalization
 // algorithm
 func (e ExclusiveCanonicalization) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
-	inputXMLCopy := inputXML.Copy()
 	doc := etree.NewDocument()
-	doc.SetRoot(inputXMLCopy)
-	return e.processElement(doc, transformXML)
+	doc.SetRoot(inputXML.Copy())
+	return e.processDocument(doc, transformXML)
 }
 
 // Process is called to transfrom the XML using the ExclusiveCanonicalization
@@ -64,7 +63,7 @@ func (e ExclusiveCanonicalization) ProcessElement(inputXML *etree.Element, trans
 func (e ExclusiveCanonicalization) ProcessDocument(doc *etree.Document,
 	transformXML string) (outputXML string, err error) {
 
-	return e.processElement(doc.Copy(), transformXML)
+	return e.processDocument(doc.Copy(), transformXML)
 }
 
 func (e ExclusiveCanonicalization) Process(inputXML string, transformXML string) (outputXML string, err error) {
@@ -76,7 +75,7 @@ func (e ExclusiveCanonicalization) Process(inputXML string, transformXML string)
 	return e.ProcessDocument(doc, transformXML)
 }
 
-func (e ExclusiveCanonicalization) processElement(doc *etree.Document, transformXML string) (outputXML string, err error) {
+func (e ExclusiveCanonicalization) processDocument(doc *etree.Document, transformXML string) (outputXML string, err error) {
 	e.namespaces = make(map[string]string)
 
 	doc.WriteSettings.CanonicalEndTags = true

@@ -65,8 +65,18 @@ func init() {
 // no child elements in Transform (or CanonicalizationMethod), then an empty
 // string will be passed through.
 type CanonicalizationAlgorithm interface {
+	// ProcessElement is called to transform an XML Element within an XML Document
+	// using the implementing algorithm
 	ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error)
+
+	// ProcessDocument is called to transform an XML Document using the implementing
+	// algorithm.
 	ProcessDocument(doc *etree.Document, transformXML string) (outputXML string, err error)
+
+	// Process is called to transform a string containing XML text using the implementing
+	// algorithm. The inputXML parameter should contain a complete XML Document. It is not
+	// correct to use this function on XML fragments. Retained for backward compatability.
+	// Use ProcessElement or ProcessDocument if possible.
 	Process(inputXML string, transformXML string) (outputXML string, err error)
 }
 

@@ -10,7 +10,7 @@ type c14N10RecCanonicalizer struct {
 }
 
 func (c *c14N10RecCanonicalizer) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
-	transformedXML, err := c.processElement(inputXML.Copy(), transformXML)
+	transformedXML, err := c.processElement(inputXML, transformXML)
 	if err != nil {
 		return "", err
 	}
@@ -19,7 +19,7 @@ func (c *c14N10RecCanonicalizer) ProcessElement(inputXML *etree.Element, transfo
 
 func (c *c14N10RecCanonicalizer) ProcessDocument(doc *etree.Document, transformXML string) (outputXML string, err error) {
 
-	transformedXML, err := c.processElement(&doc.Copy().Element, transformXML)
+	transformedXML, err := c.processElement(doc.Root(), transformXML)
 	if err != nil {
 		return "", err
 	}
@@ -55,7 +55,7 @@ type c14N11Canonicalizer struct {
 }
 
 func (c *c14N11Canonicalizer) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
-	transformedXML, err := c.processElement(inputXML.Copy(), transformXML)
+	transformedXML, err := c.processElement(inputXML, transformXML)
 	if err != nil {
 		return "", err
 	}
@@ -64,7 +64,7 @@ func (c *c14N11Canonicalizer) ProcessElement(inputXML *etree.Element, transformX
 
 func (c *c14N11Canonicalizer) ProcessDocument(doc *etree.Document, transformXML string) (outputXML string, err error) {
 
-	transformedXML, err := c.processElement(&doc.Copy().Element, transformXML)
+	transformedXML, err := c.processElement(doc.Root(), transformXML)
 	if err != nil {
 		return "", err
 	}
