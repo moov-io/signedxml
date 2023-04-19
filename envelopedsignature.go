@@ -12,6 +12,7 @@ import (
 // algorithm
 type EnvelopedSignature struct{}
 
+// see CanonicalizationAlgorithm.ProcessElement
 func (e EnvelopedSignature) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
 	transformedXML, err := e.processElement(inputXML.Copy(), transformXML)
 	if err != nil {
@@ -28,6 +29,7 @@ func (e EnvelopedSignature) ProcessElement(inputXML *etree.Element, transformXML
 	return docString, nil
 }
 
+// see CanonicalizationAlgorithm.ProcessDocument
 func (e EnvelopedSignature) ProcessDocument(doc *etree.Document,
 	transformXML string) (outputXML string, err error) {
 
@@ -44,6 +46,7 @@ func (e EnvelopedSignature) ProcessDocument(doc *etree.Document,
 	return docString, nil
 }
 
+// see CanonicalizationAlgorithm.Process
 func (e EnvelopedSignature) Process(inputXML string, transformXML string) (outputXML string, err error) {
 	doc := etree.NewDocument()
 	err = doc.ReadFromString(inputXML)

@@ -26,13 +26,13 @@ func (c *c14N10RecCanonicalizer) ProcessDocument(doc *etree.Document, transformX
 	return transformedXML, nil
 }
 
-func (e c14N10RecCanonicalizer) Process(inputXML string, transformXML string) (outputXML string, err error) {
+func (c c14N10RecCanonicalizer) Process(inputXML string, transformXML string) (outputXML string, err error) {
 	doc := etree.NewDocument()
 	err = doc.ReadFromString(inputXML)
 	if err != nil {
 		return "", err
 	}
-	return e.ProcessDocument(doc, transformXML)
+	return c.ProcessDocument(doc, transformXML)
 }
 
 func (c *c14N10RecCanonicalizer) processElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
@@ -71,13 +71,13 @@ func (c *c14N11Canonicalizer) ProcessDocument(doc *etree.Document, transformXML 
 	return transformedXML, nil
 }
 
-func (e c14N11Canonicalizer) Process(inputXML string, transformXML string) (outputXML string, err error) {
+func (c c14N11Canonicalizer) Process(inputXML string, transformXML string) (outputXML string, err error) {
 	doc := etree.NewDocument()
 	err = doc.ReadFromString(inputXML)
 	if err != nil {
 		return "", err
 	}
-	return e.ProcessDocument(doc, transformXML)
+	return c.ProcessDocument(doc, transformXML)
 }
 
 func (c *c14N11Canonicalizer) processElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {

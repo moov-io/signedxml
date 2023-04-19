@@ -49,23 +49,21 @@ type ExclusiveCanonicalization struct {
 	namespaces                   map[string]string
 }
 
-// ProcessElement is called to transfrom the XML using the ExclusiveCanonicalization
-// algorithm
+// see CanonicalizationAlgorithm.ProcessElement
 func (e ExclusiveCanonicalization) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
 	doc := etree.NewDocument()
 	doc.SetRoot(inputXML.Copy())
 	return e.processDocument(doc, transformXML)
 }
 
-// Process is called to transfrom the XML using the ExclusiveCanonicalization
-// algorithm. Retained for backward compatability. Use ProcessElement if
-// possible.
+// see CanonicalizationAlgorithm.ProcessDocument
 func (e ExclusiveCanonicalization) ProcessDocument(doc *etree.Document,
 	transformXML string) (outputXML string, err error) {
 
 	return e.processDocument(doc.Copy(), transformXML)
 }
 
+// see CanonicalizationAlgorithm.Process
 func (e ExclusiveCanonicalization) Process(inputXML string, transformXML string) (outputXML string, err error) {
 	doc := etree.NewDocument()
 	err = doc.ReadFromString(inputXML)
