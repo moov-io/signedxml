@@ -10,6 +10,32 @@ type c14N10RecCanonicalizer struct {
 }
 
 func (c *c14N10RecCanonicalizer) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
+	transformedXML, err := c.processElement(inputXML.Copy(), transformXML)
+	if err != nil {
+		return "", err
+	}
+	return transformedXML, nil
+}
+
+func (c *c14N10RecCanonicalizer) ProcessDocument(doc *etree.Document, transformXML string) (outputXML string, err error) {
+
+	transformedXML, err := c.processElement(&doc.Copy().Element, transformXML)
+	if err != nil {
+		return "", err
+	}
+	return transformedXML, nil
+}
+
+func (e c14N10RecCanonicalizer) Process(inputXML string, transformXML string) (outputXML string, err error) {
+	doc := etree.NewDocument()
+	err = doc.ReadFromString(inputXML)
+	if err != nil {
+		return "", err
+	}
+	return e.ProcessDocument(doc, transformXML)
+}
+
+func (c *c14N10RecCanonicalizer) processElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
 	var canon dsig.Canonicalizer
 	if c.WithComments {
 		canon = dsig.MakeC14N10WithCommentsCanonicalizer()
@@ -24,17 +50,37 @@ func (c *c14N10RecCanonicalizer) ProcessElement(inputXML *etree.Element, transfo
 	return string(out), nil
 }
 
-func (c *c14N10RecCanonicalizer) Process(inputXML string, transformXML string) (outputXML string, err error) {
-	doc := etree.NewDocument()
-	doc.ReadFromString(inputXML)
-	return c.ProcessElement(doc.Root(), transformXML)
-}
-
 type c14N11Canonicalizer struct {
 	WithComments bool
 }
 
 func (c *c14N11Canonicalizer) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
+	transformedXML, err := c.processElement(inputXML.Copy(), transformXML)
+	if err != nil {
+		return "", err
+	}
+	return transformedXML, nil
+}
+
+func (c *c14N11Canonicalizer) ProcessDocument(doc *etree.Document, transformXML string) (outputXML string, err error) {
+
+	transformedXML, err := c.processElement(&doc.Copy().Element, transformXML)
+	if err != nil {
+		return "", err
+	}
+	return transformedXML, nil
+}
+
+func (e c14N11Canonicalizer) Process(inputXML string, transformXML string) (outputXML string, err error) {
+	doc := etree.NewDocument()
+	err = doc.ReadFromString(inputXML)
+	if err != nil {
+		return "", err
+	}
+	return e.ProcessDocument(doc, transformXML)
+}
+
+func (c *c14N11Canonicalizer) processElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
 	var canon dsig.Canonicalizer
 	if c.WithComments {
 		canon = dsig.MakeC14N11WithCommentsCanonicalizer()
@@ -47,10 +93,4 @@ func (c *c14N11Canonicalizer) ProcessElement(inputXML *etree.Element, transformX
 		return "", err
 	}
 	return string(out), nil
-}
-
-func (c *c14N11Canonicalizer) Process(inputXML string, transformXML string) (outputXML string, err error) {
-	doc := etree.NewDocument()
-	doc.ReadFromString(inputXML)
-	return c.ProcessElement(doc.Root(), transformXML)
 }

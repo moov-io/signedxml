@@ -66,6 +66,7 @@ func init() {
 // string will be passed through.
 type CanonicalizationAlgorithm interface {
 	ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error)
+	ProcessDocument(doc *etree.Document, transformXML string) (outputXML string, err error)
 	Process(inputXML string, transformXML string) (outputXML string, err error)
 }
 
@@ -287,7 +288,7 @@ func processTransform(transform *etree.Element,
 		}
 	}
 
-	docString, err := transformAlgo.ProcessElement(docIn.Root(), transformContent)
+	docString, err := transformAlgo.ProcessDocument(docIn, transformContent)
 	if err != nil {
 		return nil, err
 	}

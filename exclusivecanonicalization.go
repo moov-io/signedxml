@@ -53,11 +53,32 @@ type ExclusiveCanonicalization struct {
 // algorithm
 func (e ExclusiveCanonicalization) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
 	inputXMLCopy := inputXML.Copy()
-
-	e.namespaces = make(map[string]string)
-
 	doc := etree.NewDocument()
 	doc.SetRoot(inputXMLCopy)
+	return e.processElement(doc, transformXML)
+}
+
+// Process is called to transfrom the XML using the ExclusiveCanonicalization
+// algorithm. Retained for backward compatability. Use ProcessElement if
+// possible.
+func (e ExclusiveCanonicalization) ProcessDocument(doc *etree.Document,
+	transformXML string) (outputXML string, err error) {
+
+	return e.processElement(doc.Copy(), transformXML)
+}
+
+func (e ExclusiveCanonicalization) Process(inputXML string, transformXML string) (outputXML string, err error) {
+	doc := etree.NewDocument()
+	err = doc.ReadFromString(inputXML)
+	if err != nil {
+		return "", err
+	}
+	return e.ProcessDocument(doc, transformXML)
+}
+
+func (e ExclusiveCanonicalization) processElement(doc *etree.Document, transformXML string) (outputXML string, err error) {
+	e.namespaces = make(map[string]string)
+
 	doc.WriteSettings.CanonicalEndTags = true
 	doc.WriteSettings.CanonicalText = true
 	doc.WriteSettings.CanonicalAttrVal = true
@@ -68,17 +89,6 @@ func (e ExclusiveCanonicalization) ProcessElement(inputXML *etree.Element, trans
 
 	outputXML, err = doc.WriteToString()
 	return outputXML, err
-}
-
-// Process is called to transfrom the XML using the ExclusiveCanonicalization
-// algorithm. Retained for backward compatability. Use ProcessElement if
-// possible.
-func (e ExclusiveCanonicalization) Process(inputXML string,
-	transformXML string) (outputXML string, err error) {
-
-	doc := etree.NewDocument()
-	doc.ReadFromString(inputXML)
-	return e.ProcessElement(doc.Root(), transformXML)
 }
 
 func (e *ExclusiveCanonicalization) loadPrefixList(transformXML string) {

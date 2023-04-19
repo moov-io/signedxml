@@ -186,7 +186,7 @@ func TestValidate(t *testing.T) {
 func TestEnvelopedSignatureProcess(t *testing.T) {
 	Convey("Given a document without a Signature elemement", t, func() {
 		doc := "<doc></doc>"
-		Convey("When Process is called", func() {
+		Convey("When ProcessDocument is called", func() {
 			envSig := EnvelopedSignature{}
 			_, err := envSig.Process(doc, "")
 			Convey("Then an error occurs", func() {
@@ -198,7 +198,7 @@ func TestEnvelopedSignatureProcess(t *testing.T) {
 
 	Convey("Given an unparented signature element", t, func() {
 		doc := "<Signatrue></Signature>"
-		Convey("When Process is called", func() {
+		Convey("When ProcessDocument is called", func() {
 			envSig := EnvelopedSignature{}
 			_, err := envSig.Process(doc, "")
 			Convey("Then an error occurs", func() {

@@ -15,20 +15,13 @@ type EnvelopedSignature struct{}
 // ProcessElement is called to transfrom the XML using the EnvelopedSignature
 // algorithm
 func (e EnvelopedSignature) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
-	inputXMLCopy := inputXML.Copy()
-	sig := inputXMLCopy.FindElement(".//Signature")
-	if sig == nil {
-		return "", errors.New("signedxml: unable to find Signature node")
-	}
-
-	sigParent := sig.Parent()
-	elem := sigParent.RemoveChild(sig)
-	if elem == nil {
-		return "", errors.New("signedxml: unable to remove Signature element")
+	transformedXML, err := e.processElement(inputXML, transformXML)
+	if err != nil {
+		return "", err
 	}
 
 	doc := etree.NewDocument()
-	doc.SetRoot(inputXMLCopy)
+	doc.SetRoot(transformedXML)
 	docString, err := doc.WriteToString()
 	if err != nil {
 		return "", err
@@ -40,10 +33,43 @@ func (e EnvelopedSignature) ProcessElement(inputXML *etree.Element, transformXML
 // Process is called to transfrom the XML using the EnvelopedSignature
 // algorithm. Retained for backward compatability. Use ProcessElement if
 // possible.
-func (e EnvelopedSignature) Process(inputXML string,
+func (e EnvelopedSignature) ProcessDocument(doc *etree.Document,
 	transformXML string) (outputXML string, err error) {
 
+	transformedRoot, err := e.processElement(doc.Root(), transformXML)
+	if err != nil {
+		return "", err
+	}
+	doc.SetRoot(transformedRoot)
+	docString, err := doc.WriteToString()
+	if err != nil {
+		return "", err
+	}
+	//logger.Println(docString)
+	return docString, nil
+}
+
+func (e EnvelopedSignature) Process(inputXML string, transformXML string) (outputXML string, err error) {
 	doc := etree.NewDocument()
-	doc.ReadFromString(inputXML)
-	return e.ProcessElement(doc.Root(), transformXML)
+	err = doc.ReadFromString(inputXML)
+	if err != nil {
+		return "", err
+	}
+	return e.ProcessDocument(doc, transformXML)
+}
+
+func (e EnvelopedSignature) processElement(inputXML *etree.Element, transformXML string) (outputXML *etree.Element, err error) {
+	inputXMLCopy := inputXML.Copy()
+	sig := inputXMLCopy.FindElement(".//Signature")
+	if sig == nil {
+		return nil, errors.New("signedxml: unable to find Signature node")
+	}
+
+	sigParent := sig.Parent()
+	elem := sigParent.RemoveChild(sig)
+	if elem == nil {
+		return nil, errors.New("signedxml: unable to remove Signature element")
+	}
+
+	return inputXMLCopy, nil
 }
