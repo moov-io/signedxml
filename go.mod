@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/beevik/etree v1.1.0
-	github.com/russellhaering/goxmldsig v1.3.1-0.20230419164806-1bb67cd2d6cf
+	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/smartystreets/goconvey v1.7.2
 )
 
