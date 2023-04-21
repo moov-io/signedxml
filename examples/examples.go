@@ -27,9 +27,12 @@ func testValidator() {
 	if err != nil {
 		fmt.Printf("Validation Error: %s", err)
 	} else {
-		err = validator.Validate()
+		refs, err := validator.ValidateReferences()
 		if err != nil {
 			fmt.Printf("Validation Error: %s\n", err)
+		}
+		if len(refs) == 0 {
+			fmt.Println("ERROR: No Validated References")
 		} else {
 			fmt.Println("Example Validation Succeeded")
 		}

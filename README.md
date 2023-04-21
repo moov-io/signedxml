@@ -54,7 +54,7 @@ Other packages that provide similar functionality rely on C libraries, which mak
 ### Examples
 
 #### Validating signed XML
-If your signed xml contains the signature and certificate, then you can just pass in the xml and call `Validate()`.
+If your signed xml contains the signature and certificate, then you can just pass in the xml and call `ValidateReferences()`.
 ```go
 validator, err := signedxml.NewValidator(`<YourXMLString></YourXMLString>`)
 xml, err = validator.ValidateReferences()

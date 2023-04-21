@@ -33,8 +33,9 @@ func TestSign(t *testing.T) {
 			Convey("And the signature should be valid", func() {
 				validator, _ := NewValidator(xmlStr)
 				validator.Certificates = append(validator.Certificates, *cert)
-				err := validator.Validate()
+				refs, err := validator.ValidateReferences()
 				So(err, ShouldBeNil)
+				So(len(refs), ShouldEqual, 1)
 			})
 		})
 	})
@@ -51,8 +52,9 @@ func TestSign(t *testing.T) {
 			Convey("And the signature should be valid", func() {
 				validator, _ := NewValidator(xmlStr)
 				validator.Certificates = append(validator.Certificates, *cert)
-				err := validator.Validate()
+				refs, err := validator.ValidateReferences()
 				So(err, ShouldBeNil)
+				So(len(refs), ShouldEqual, 1)
 			})
 		})
 	})
@@ -71,14 +73,16 @@ func TestSign(t *testing.T) {
 				validator, _ := NewValidator(xmlStr)
 				validator.Certificates = append(validator.Certificates, *cert)
 				validator.SetReferenceIDAttribute("customId")
-				err := validator.Validate()
+				refs, err := validator.ValidateReferences()
 				So(err, ShouldBeNil)
+				So(len(refs), ShouldEqual, 1)
 			})
 			Convey("And the signature should be valid, but validation fail if referenceIDAttribute NOT SET", func() {
 				validator, _ := NewValidator(xmlStr)
 				validator.Certificates = append(validator.Certificates, *cert)
-				err := validator.Validate()
+				refs, err := validator.ValidateReferences()
 				So(err, ShouldNotBeNil)
+				So(len(refs), ShouldEqual, 0)
 			})
 		})
 
@@ -115,10 +119,11 @@ func TestValidate(t *testing.T) {
 				defer xmlFile.Close()
 				xmlBytes, _ := ioutil.ReadAll(xmlFile)
 				validator, _ := NewValidator(string(xmlBytes))
-				err = validator.Validate()
+				refs, err := validator.ValidateReferences()
 				Convey("Then no error occurs", func() {
 					So(err, ShouldBeNil)
 					So(validator.SigningCert().PublicKey, ShouldNotBeNil)
+					So(len(refs), ShouldEqual, 1)
 				})
 			})
 		}
@@ -131,10 +136,11 @@ func TestValidate(t *testing.T) {
 			validator := Validator{}
 			validator.SetXML(string(xmlBytes))
 			validator.SetSignature(sig)
-			err := validator.Validate()
+			refs, err := validator.ValidateReferences()
 			Convey("Then no error occurs", func() {
 				So(err, ShouldBeNil)
 				So(validator.SigningCert().PublicKey, ShouldNotBeNil)
+				So(len(refs), ShouldEqual, 1)
 			})
 		})
 
@@ -148,10 +154,11 @@ func TestValidate(t *testing.T) {
 			validator := Validator{}
 			validator.SetXML(string(xmlBytes))
 			validator.Certificates = append(validator.Certificates, *cert)
-			err := validator.Validate()
+			refs, err := validator.ValidateReferences()
 			Convey("Then no error occurs", func() {
 				So(err, ShouldBeNil)
 				So(validator.SigningCert().PublicKey, ShouldNotBeNil)
+				So(len(refs), ShouldEqual, 1)
 			})
 		})
 	})
@@ -164,7 +171,7 @@ func TestValidate(t *testing.T) {
 		}
 
 		for description, test := range cases {
-			Convey(fmt.Sprintf("When Validate is called %s", description), func() {
+			Convey(fmt.Sprintf("When ValidateReferences is called %s", description), func() {
 				xmlFile, err := os.Open(test)
 				if err != nil {
 					fmt.Println("Error opening file:", err)
