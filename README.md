@@ -1,15 +1,23 @@
-## signedxml
+[![Moov Banner Logo](https://user-images.githubusercontent.com/20115216/104214617-885b3c80-53ec-11eb-8ce0-9fc745fb5bfc.png)](https://github.com/moov-io)
 
-[![Build Status](https://travis-ci.org/ma314smith/signedxml.svg?branch=master)](https://travis-ci.org/ma314smith/signedxml)
-[![GoDoc](https://godoc.org/github.com/ma314smith/signedxml?status.svg)](https://godoc.org/github.com/ma314smith/signedxml)
+## moov-io/signedxml
+
+[![GoDoc](https://godoc.org/github.com/moov-io/signedxml?status.svg)](https://godoc.org/github.com/moov-io/signedxml)
+[![Build Status](https://github.com/moov-io/signedxml/workflows/Go/badge.svg)](https://github.com/moov-io/signedxml/actions)
+[![Coverage Status](https://codecov.io/gh/moov-io/signedxml/branch/master/graph/badge.svg)](https://codecov.io/gh/moov-io/signedxml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/moov-io/signedxml)](https://goreportcard.com/report/github.com/moov-io/signedxml)
+[![Repo Size](https://img.shields.io/github/languages/code-size/moov-io/signedxml?label=project%20size)](https://github.com/moov-io/signedxml)
+[![MIT  License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/moov-io/signedxml/master/LICENSE.md)
+[![Slack Channel](https://slack.moov.io/badge.svg?bg=e01563&fgColor=fffff)](https://slack.moov.io/)
+[![Twitter](https://img.shields.io/twitter/follow/moov?style=social)](https://twitter.com/moov?lang=en)
 
 The signedxml package transforms and validates signed xml documents. The main use case is to support Single Sign On protocols like SAML and WS-Federation.
 
-Other packages that provide similar functionality rely on C libraries, which makes them difficult to run across platforms without significant configuration.  `signedxml` is written in pure go, and can be easily used on any platform.
+Other packages that provide similar functionality rely on C libraries, which makes them difficult to run across platforms without significant configuration.  `signedxml` is written in pure go, and can be easily used on any platform. This package was originally created by [Matt Smith](https://github.com/ma314smith) and is in use at Moov Financial.
 
 ### Install
 
-`go get github.com/ma314smith/signedxml`
+`go get github.com/moov-io/signedxml`
 
 ### Included Algorithms
 

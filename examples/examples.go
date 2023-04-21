@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/ma314smith/signedxml"
+	"github.com/moov-io/signedxml"
 )
 
 func main() {
