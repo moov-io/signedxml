@@ -29,7 +29,7 @@ func testValidator() {
 	} else {
 		err = validator.Validate()
 		if err != nil {
-			fmt.Printf("Validation Error: %s", err)
+			fmt.Printf("Validation Error: %s\n", err)
 		} else {
 			fmt.Println("Example Validation Succeeded")
 		}
@@ -59,7 +59,7 @@ func testExclCanon() {
 	resultXML, err := transform.Process(input, "")
 
 	if err != nil {
-		fmt.Printf("Transformation Error: %s", err)
+		fmt.Printf("Transformation Error: %s\n", err)
 	} else {
 		if resultXML == output {
 			fmt.Println("Example Tranformation Succeeded")

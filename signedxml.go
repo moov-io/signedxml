@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/beevik/etree"
+	dsig "github.com/russellhaering/goxmldsig"
 )
 
 var logger = log.New(os.Stdout, "DEBUG-SIGNEDXML: ", log.Ldate|log.Ltime|log.Lshortfile)
@@ -47,6 +48,10 @@ func init() {
 		"http://www.w3.org/2000/09/xmldsig#enveloped-signature": EnvelopedSignature{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#":               ExclusiveCanonicalization{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#WithComments":   ExclusiveCanonicalization{WithComments: true},
+		dsig.CanonicalXML11AlgorithmId.String():                 &c14N11Canonicalizer{},
+		dsig.CanonicalXML11WithCommentsAlgorithmId.String():     &c14N11Canonicalizer{WithComments: true},
+		dsig.CanonicalXML10RecAlgorithmId.String():              &c14N10RecCanonicalizer{},
+		dsig.CanonicalXML10WithCommentsAlgorithmId.String():     &c14N10RecCanonicalizer{WithComments: true},
 	}
 }
 
@@ -60,6 +65,18 @@ func init() {
 // no child elements in Transform (or CanonicalizationMethod), then an empty
 // string will be passed through.
 type CanonicalizationAlgorithm interface {
+	// ProcessElement is called to transform an XML Element within an XML Document
+	// using the implementing algorithm
+	ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error)
+
+	// ProcessDocument is called to transform an XML Document using the implementing
+	// algorithm.
+	ProcessDocument(doc *etree.Document, transformXML string) (outputXML string, err error)
+
+	// Process is called to transform a string containing XML text using the implementing
+	// algorithm. The inputXML parameter should contain a complete XML Document. It is not
+	// correct to use this function on XML fragments. Retained for backward compatability.
+	// Use ProcessElement or ProcessDocument if possible.
 	Process(inputXML string, transformXML string) (outputXML string, err error)
 }
 
@@ -68,9 +85,10 @@ type CanonicalizationAlgorithm interface {
 // CanonicalizationAlgorithm interface.
 //
 // Implementations are provided for the following transforms:
-//  http://www.w3.org/2001/10/xml-exc-c14n# (ExclusiveCanonicalization)
-//  http://www.w3.org/2001/10/xml-exc-c14n#WithComments (ExclusiveCanonicalizationWithComments)
-//  http://www.w3.org/2000/09/xmldsig#enveloped-signature (EnvelopedSignature)
+//
+//	http://www.w3.org/2001/10/xml-exc-c14n# (ExclusiveCanonicalization)
+//	http://www.w3.org/2001/10/xml-exc-c14n#WithComments (ExclusiveCanonicalizationWithComments)
+//	http://www.w3.org/2000/09/xmldsig#enveloped-signature (EnvelopedSignature)
 //
 // Custom implementations can be added to the map
 var CanonicalizationAlgorithms map[string]CanonicalizationAlgorithm
@@ -280,12 +298,7 @@ func processTransform(transform *etree.Element,
 		}
 	}
 
-	docString, err := docIn.WriteToString()
-	if err != nil {
-		return nil, err
-	}
-
-	docString, err = transformAlgo.Process(docString, transformContent)
+	docString, err := transformAlgo.ProcessDocument(docIn, transformContent)
 	if err != nil {
 		return nil, err
 	}
