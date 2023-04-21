@@ -115,5 +115,18 @@ Validator example:
 validator.SetReferenceIDAttribute("customId")
 ```
 
-### Contributions
+## Getting help
+
+ channel | info
+ ------- | -------
+Twitter [@moov](https://twitter.com/moov)	| You can follow Moov.io's Twitter feed to get updates on our project(s). You can also tweet us questions or just share blogs or stories.
+[GitHub Issue](https://github.com/moov-io/signedxml/issues/new) | If you are able to reproduce a problem please open a GitHub Issue under the specific project that caused the error.
+[moov-io slack](https://slack.moov.io/) | Join our slack channel to have an interactive discussion about the development of the project.
+
+## Contributions
+
 Contributions are welcome. Just fork the repo and send a pull request.
+
+## Releated Projects
+
+- [Moov RTP20022](http://github.com/moov-io/rtp20022) implements ISO20022 messages in Go for Real Time Payments (RTP)
