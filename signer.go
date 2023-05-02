@@ -17,11 +17,11 @@ func init() {
 	signingAlgorithms = map[x509.SignatureAlgorithm]cryptoHash{
 		// MD2 not supported
 		// x509.MD2WithRSA: cryptoHash{algorithm: "rsa", hash: crypto.MD2},
-		x509.MD5WithRSA:    cryptoHash{algorithm: "rsa", hash: crypto.MD5},
-		x509.SHA1WithRSA:   cryptoHash{algorithm: "rsa", hash: crypto.SHA1},
-		x509.SHA256WithRSA: cryptoHash{algorithm: "rsa", hash: crypto.SHA256},
-		x509.SHA384WithRSA: cryptoHash{algorithm: "rsa", hash: crypto.SHA384},
-		x509.SHA512WithRSA: cryptoHash{algorithm: "rsa", hash: crypto.SHA512},
+		x509.MD5WithRSA:    {algorithm: "rsa", hash: crypto.MD5},
+		x509.SHA1WithRSA:   {algorithm: "rsa", hash: crypto.SHA1},
+		x509.SHA256WithRSA: {algorithm: "rsa", hash: crypto.SHA256},
+		x509.SHA384WithRSA: {algorithm: "rsa", hash: crypto.SHA384},
+		x509.SHA512WithRSA: {algorithm: "rsa", hash: crypto.SHA512},
 		// DSA not supported
 		// x509.DSAWithSHA1:  cryptoHash{algorithm: "dsa", hash: crypto.SHA1},
 		// x509.DSAWithSHA256:cryptoHash{algorithm: "dsa", hash: crypto.SHA256},

@@ -489,12 +489,12 @@ type exampleXML struct {
 func TestCanonicalizationExamples(t *testing.T) {
 	Convey("Given XML Input", t, func() {
 		cases := map[string]exampleXML{
-			"(Example 3.1 w/o Comments)": exampleXML{input: example31Input, output: example31Output},
-			"(Example 3.1 w/Comments)":   exampleXML{input: example31Input, output: example31OutputWithComments, withComments: true},
-			"(Example 3.2)":              exampleXML{input: example32Input, output: example32Output},
+			"(Example 3.1 w/o Comments)": {input: example31Input, output: example31Output},
+			"(Example 3.1 w/Comments)":   {input: example31Input, output: example31OutputWithComments, withComments: true},
+			"(Example 3.2)":              {input: example32Input, output: example32Output},
 			// 3.3 is for Canonical NOT ExclusiveCanonical (one of the exceptions here: http://www.w3.org/TR/xml-exc-c14n/#sec-Specification)
 			//"(Example 3.3)":              exampleXML{input: example33Input, output: example33Output},
-			"(Example 3.4)": exampleXML{input: example34Input, output: example34ModifiedOutput},
+			"(Example 3.4)": {input: example34Input, output: example34ModifiedOutput},
 			//"(Example 3.5)": exampleXML{input: example35Input, output: example35Output},
 			// 3.6 will work, but requires a change to the etree package first:
 			// http://stackoverflow.com/questions/6002619/unmarshal-an-iso-8859-1-xml-input-in-go
