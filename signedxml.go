@@ -8,15 +8,11 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"log"
-	"os"
 	"strings"
 
 	"github.com/beevik/etree"
 	dsig "github.com/russellhaering/goxmldsig"
 )
-
-var logger = log.New(os.Stdout, "DEBUG-SIGNEDXML: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 func init() {
 	hashAlgorithms = map[string]crypto.Hash{
@@ -75,7 +71,7 @@ type CanonicalizationAlgorithm interface {
 
 	// Process is called to transform a string containing XML text using the implementing
 	// algorithm. The inputXML parameter should contain a complete XML Document. It is not
-	// correct to use this function on XML fragments. Retained for backward compatability.
+	// correct to use this function on XML fragments. Retained for backward comparability.
 	// Use ProcessElement or ProcessDocument if possible.
 	Process(inputXML string, transformXML string) (outputXML string, err error)
 }
@@ -335,10 +331,6 @@ func calculateHash(reference *etree.Element, doc *etree.Document) (string, error
 	if err != nil {
 		return "", err
 	}
-
-	// ioutil.WriteFile("C:/Temp/SignedXML/Suspect.xml", docBytes, 0644)
-	// s, _ := doc.WriteToString()
-	// logger.Println(s)
 
 	h.Write(docBytes)
 	d := h.Sum(nil)

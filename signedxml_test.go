@@ -2,6 +2,7 @@ package signedxml
 
 import (
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
@@ -17,7 +18,8 @@ func TestSign(t *testing.T) {
 	pemBlock, _ := pem.Decode([]byte(pemString))
 	cert, _ := x509.ParseCertificate(pemBlock.Bytes)
 
-	pemString, _ = ioutil.ReadFile("./testdata/rsa.key")
+	b64Bytes, _ := ioutil.ReadFile("./testdata/rsa.key.b64")
+	pemString, _ = base64.StdEncoding.DecodeString(string(b64Bytes))
 	pemBlock, _ = pem.Decode([]byte(pemString))
 	key, _ := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
 
