@@ -167,25 +167,44 @@ func TestValidate(t *testing.T) {
 
 	Convey("Given invalid signed XML", t, func() {
 		cases := map[string]string{
-			"(Changed Content)":        "./testdata/invalid-signature-changed content.xml",
+			"(Changed Content)":        "./testdata/invalid-signature-changed-content.xml",
 			"(Non-existing Reference)": "./testdata/invalid-signature-non-existing-reference.xml",
-			"(Wrong Sig Value)":        "./testdata/invalid-signature-signature-value.xml",
 		}
-
 		for description, test := range cases {
 			Convey(fmt.Sprintf("When ValidateReferences is called %s", description), func() {
-				xmlFile, err := os.Open(test)
+				xmlBytes, err := os.ReadFile(test)
 				if err != nil {
-					fmt.Println("Error opening file:", err)
+					fmt.Println("Error reading file:", err)
 				}
-				defer xmlFile.Close()
-				xmlBytes, _ := ioutil.ReadAll(xmlFile)
 				validator, _ := NewValidator(string(xmlBytes))
 
-				err = validator.Validate()
+				refs, err := validator.ValidateReferences()
 				Convey("Then an error occurs", func() {
 					So(err, ShouldNotBeNil)
 					So(err.Error(), ShouldContainSubstring, "signedxml:")
+					t.Logf("%v  - %d", description, len(refs))
+					So(len(refs), ShouldEqual, 0)
+				})
+			})
+		}
+
+		cases = map[string]string{
+			"(Wrong Sig Value)": "./testdata/invalid-signature-signature-value.xml",
+		}
+		for description, test := range cases {
+			Convey(fmt.Sprintf("When ValidateReferences is called %s", description), func() {
+				xmlBytes, err := os.ReadFile(test)
+				if err != nil {
+					fmt.Println("Error reading file:", err)
+				}
+				validator, _ := NewValidator(string(xmlBytes))
+
+				refs, err := validator.ValidateReferences()
+				Convey("Then an error occurs", func() {
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldContainSubstring, "signedxml:")
+					t.Logf("%v  - %d", description, len(refs))
+					So(len(refs), ShouldEqual, 1)
 				})
 			})
 		}
