@@ -26,3 +26,4 @@ _testmain.go
 /bin/
 /gitleaks.tar.gz
 /lint-project.sh
+/coverage.txt

@@ -159,8 +159,7 @@ func (e ExclusiveCanonicalization) processDocLevelNodes(doc *etree.Document) {
 func (e ExclusiveCanonicalization) processRecursive(node *etree.Element,
 	prefixesInScope []string, defaultNS string) {
 
-	newDefaultNS, newPrefixesInScope :=
-		e.renderAttributes(node, prefixesInScope, defaultNS)
+	newDefaultNS, newPrefixesInScope := e.renderAttributes(node, prefixesInScope, defaultNS)
 
 	for _, child := range node.Child {
 		oldNamespaces := e.namespaces
@@ -179,10 +178,7 @@ func (e ExclusiveCanonicalization) processRecursive(node *etree.Element,
 	}
 }
 
-func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element,
-	prefixesInScope []string, defaultNS string) (newDefaultNS string,
-	newPrefixesInScope []string) {
-
+func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element, prefixesInScope []string, defaultNS string) (newDefaultNS string, newPrefixesInScope []string) {
 	currentNS := node.SelectAttrValue("xmlns", defaultNS)
 	elementAttributes := []etree.Attr{}
 	nsListToRender := make(map[string]string)
@@ -202,9 +198,7 @@ func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element,
 			prefixesInScope = append(prefixesInScope, node.Space)
 		}
 	} else if defaultNS != currentNS {
-		newDefaultNS = currentNS
-		elementAttributes = append(elementAttributes,
-			etree.Attr{Key: "xmlns", Value: currentNS})
+		elementAttributes = append(elementAttributes, etree.Attr{Key: "xmlns", Value: currentNS})
 	}
 
 	for _, attr := range node.Attr {

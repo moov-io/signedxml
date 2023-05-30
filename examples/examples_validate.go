@@ -1,4 +1,4 @@
-package main
+package examples
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/moov-io/signedxml"
 )
 
-func main() {
+func ExampleValidate() {
 	testValidator()
 	testExclCanon()
 }
