@@ -48,15 +48,6 @@ func (v *Validator) SigningCert() x509.Certificate {
 	return v.signingCert
 }
 
-// Validate validates the Reference digest values, and the signature value
-// over the SignedInfo.
-//
-// Deprecated: Use ValidateReferences instead
-func (v *Validator) Validate() error {
-	_, err := v.ValidateReferences()
-	return err
-}
-
 // ValidateReferences validates the Reference digest values, and the signature value
 // over the SignedInfo.
 //
