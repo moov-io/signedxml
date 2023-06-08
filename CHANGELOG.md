@@ -1,3 +1,10 @@
+## v1.1.1 (Released 2023-06-08)
+
+FIXES
+
+- Preserve CDATA text when signing a document
+- Typo in TestEnvelopedSignatureProcess
+
 ## v1.1.0 (Released 2023-05-30)
 
 IMPROVEMENTS
