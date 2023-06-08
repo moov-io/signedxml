@@ -225,7 +225,7 @@ func TestEnvelopedSignatureProcess(t *testing.T) {
 	})
 
 	Convey("Given an unparented signature element", t, func() {
-		doc := "<Signatrue></Signature>"
+		doc := "<Signature></Signature>"
 		Convey("When ProcessDocument is called", func() {
 			envSig := EnvelopedSignature{}
 			_, err := envSig.Process(doc, "")

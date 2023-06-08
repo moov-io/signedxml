@@ -3,7 +3,7 @@ module github.com/moov-io/signedxml
 go 1.20
 
 require (
-	github.com/beevik/etree v1.1.0
+	github.com/beevik/etree v1.2.0
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/smartystreets/goconvey v1.8.0
 )

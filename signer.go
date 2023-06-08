@@ -47,6 +47,7 @@ type Signer struct {
 // NewSigner returns a *Signer for the XML provided
 func NewSigner(xml string) (*Signer, error) {
 	doc := etree.NewDocument()
+	doc.ReadSettings.PreserveCData = true
 	err := doc.ReadFromString(xml)
 	if err != nil {
 		return nil, err
