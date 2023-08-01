@@ -52,6 +52,11 @@ func NewSigner(xml string) (*Signer, error) {
 	if err != nil {
 		return nil, err
 	}
+	return NewSignerFromDoc(doc)
+}
+
+// NewSignerFromDoc returns a *Signer for the Document provided
+func NewSignerFromDoc(doc *etree.Document) (*Signer, error) {
 	s := &Signer{signatureData: signatureData{xml: doc}}
 	return s, nil
 }
