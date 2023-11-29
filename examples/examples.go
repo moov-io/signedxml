@@ -1,4 +1,4 @@
-package main
+package examples
 
 import (
 	"fmt"
@@ -8,12 +8,12 @@ import (
 	"github.com/daugminas/signedxml"
 )
 
-func main() {
-	// testValidator()
-	// testExclCanon()
-	// testLBmsgValidator()
-	testOwnSignedDocValidator()
-}
+// func main() {
+// 	// testValidator()
+// 	// testExclCanon()
+// 	// testLBmsgValidator()
+// 	testOwnSignedDocValidator()
+// }
 
 func testValidator() {
 	xmlFile, err := os.Open("../testdata/valid-saml.xml")
