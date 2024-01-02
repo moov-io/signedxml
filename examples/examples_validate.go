@@ -2,7 +2,7 @@ package examples
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/moov-io/signedxml"
@@ -21,7 +21,7 @@ func testValidator() {
 	}
 	defer xmlFile.Close()
 
-	xmlBytes, _ := ioutil.ReadAll(xmlFile)
+	xmlBytes, _ := io.ReadAll(xmlFile)
 
 	validator, err := signedxml.NewValidator(string(xmlBytes))
 	if err != nil {

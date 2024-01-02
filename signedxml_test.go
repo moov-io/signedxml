@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -14,17 +14,17 @@ import (
 )
 
 func TestSign(t *testing.T) {
-	pemString, _ := ioutil.ReadFile("./testdata/rsa.crt")
+	pemString, _ := os.ReadFile("./testdata/rsa.crt")
 	pemBlock, _ := pem.Decode([]byte(pemString))
 	cert, _ := x509.ParseCertificate(pemBlock.Bytes)
 
-	b64Bytes, _ := ioutil.ReadFile("./testdata/rsa.key.b64")
+	b64Bytes, _ := os.ReadFile("./testdata/rsa.key.b64")
 	pemString, _ = base64.StdEncoding.DecodeString(string(b64Bytes))
 	pemBlock, _ = pem.Decode([]byte(pemString))
 	key, _ := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
 
 	Convey("Given an XML, certificate, and RSA key", t, func() {
-		xml, _ := ioutil.ReadFile("./testdata/nosignature.xml")
+		xml, _ := os.ReadFile("./testdata/nosignature.xml")
 
 		Convey("When generating the signature", func() {
 			signer, _ := NewSigner(string(xml))
@@ -43,7 +43,7 @@ func TestSign(t *testing.T) {
 	})
 
 	Convey("Given an XML with http://www.w3.org/TR/2001/REC-xml-c14n-20010315 canonicalization, certificate, and RSA key", t, func() {
-		xml, _ := ioutil.ReadFile("./testdata/nosignature2.xml")
+		xml, _ := os.ReadFile("./testdata/nosignature2.xml")
 
 		Convey("When generating the signature", func() {
 			signer, _ := NewSigner(string(xml))
@@ -62,7 +62,7 @@ func TestSign(t *testing.T) {
 	})
 
 	Convey("Given an XML with custom referenceIDAttribute, certificate, and RSA key", t, func() {
-		xml, _ := ioutil.ReadFile("./testdata/nosignature-custom-reference-id-attribute.xml")
+		xml, _ := os.ReadFile("./testdata/nosignature-custom-reference-id-attribute.xml")
 
 		Convey("When generating the signature with custom referenceIDAttribute", func() {
 			signer, _ := NewSigner(string(xml))
@@ -119,7 +119,7 @@ func TestValidate(t *testing.T) {
 					fmt.Println("Error opening file:", err)
 				}
 				defer xmlFile.Close()
-				xmlBytes, _ := ioutil.ReadAll(xmlFile)
+				xmlBytes, _ := io.ReadAll(xmlFile)
 				validator, _ := NewValidator(string(xmlBytes))
 				refs, err := validator.ValidateReferences()
 				Convey("Then no error occurs", func() {
@@ -134,7 +134,7 @@ func TestValidate(t *testing.T) {
 			xmlFile, _ := os.Open("./testdata/bbauth-metadata.xml")
 			sig := `<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI="#_69b42076-409e-4476-af41-339962e49427"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>LPHoiAkLmA/TGIuVbgpwlFLXL+ymEBc7TS0fC9/PTQU=</DigestValue></Reference></SignedInfo><SignatureValue>d2CXq9GEeDKvMxdpxtTRKQ8TGeSWhJOVPs8LMD0ObeE1t/YGiAm9keorMiki4laxbWqAuOmwHK3qNHogRFgkIYi3fnuFBzMrahXf0n3A5PRXXW1m768Z92GKV09pGuygKUXCtXzwq0seDi6PnzMCJFzFXGQWnum0paa8Oz+6425Sn0zO0fT3ttp3AXeXGyNXwYPYcX1iEMB7klUlyiz2hmn8ngCIbTkru7uIeyPmQ5WD4SS/qQaL4yb3FZibXoe/eRXrbkG1NAJCw9OWw0jsvWncE1rKFaqEMbz21fXSDhh3Ls+p9yVf+xbCrpkT0FMqjTHpNRvccMPZe/hDGrHV7Q==</SignatureValue><KeyInfo><X509Data><X509Certificate>MIIDNzCCAh+gAwIBAgIQQVK+d/vLK4ZNMDk15HGUoTANBgkqhkiG9w0BAQ0FADAoMSYwJAYDVQQDEx1CbGFja2JhdWQgQXV0aGVudGljYXRpb24gMjAyMjAeFw0wMDAxMDEwNDAwMDBaFw0yMjAxMDEwNDAwMDBaMCgxJjAkBgNVBAMTHUJsYWNrYmF1ZCBBdXRoZW50aWNhdGlvbiAyMDIyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArgByjSPVvP4DLf/l7QRz7G7Dhkdns0QjWslnWejHlFIezfkJ4NGPp0+5CRCFYBqAb7DhqyK77Ek5xdzmwgYb1X6GD6UDltWvN5BBFAw69I6/K0WjguFUxk19T7xdc8vTCNAMi+6Ys49O3EBNnI2fiqDoBdMjUTud1F04QY3N2rZWkjMrHV+CnzhoUwqsO/ABWrDbkPzBXdOOIbsKH0k0IP8q2+35pe1y2nxtB9f1fCyCmbUH2HINMHahDmxxanTW5Jy14yD/HSRTFQF9JMTeglomWq5q9VPx0NjsEJR+B5IkRCTf75LoYrrr/fvQm3aummmYPdHauXCBrcm0moX4ywIDAQABo10wWzBZBgNVHQEEUjBQgBDCHOfardZfhltQSbLqsukZoSowKDEmMCQGA1UEAxMdQmxhY2tiYXVkIEF1dGhlbnRpY2F0aW9uIDIwMjKCEEFSvnf7yyuGTTA5NeRxlKEwDQYJKoZIhvcNAQENBQADggEBADrOhfRiynRKGD7EHohpPrltFScJ9+QErYMhEvteqh3C48T99uKgDY8wTqv+PI08QUSZuhmmF2d+W7aRBo3t8ZZepIXCwDaKo/oUp2h5Y9O3vyGDguq5ptgDTmPNYDCwWtdt0TtQYeLtCQTJVbYByWL0eT+KdzQOkAi48cPEOObSc9Biga7LTCcbCVPeJlYzmHDQUhzBt2jcy5BGvmZloI5SsoZvve6ug74qNq8IJMyzJzUp3kRuB0ruKIioSDi1lc783LDT3LSXyIbOGw/vHBEBY4Ax7FK8CqXJ2TsYqVsyo8QypqXDnveLcgK+PNEAhezhxC9hyV8j1I8pfF72ABE=</X509Certificate></X509Data></KeyInfo></Signature>`
 			defer xmlFile.Close()
-			xmlBytes, _ := ioutil.ReadAll(xmlFile)
+			xmlBytes, _ := io.ReadAll(xmlFile)
 			validator := Validator{}
 			validator.SetXML(string(xmlBytes))
 			validator.SetSignature(sig)
@@ -148,11 +148,11 @@ func TestValidate(t *testing.T) {
 
 		Convey("When Validate is called with an external certificate and root xmlns", func() {
 			xmlFile, _ := os.Open("./testdata/rootxmlns.xml")
-			pemString, _ := ioutil.ReadFile("./testdata/rootxmlns.crt")
+			pemString, _ := os.ReadFile("./testdata/rootxmlns.crt")
 			pemBlock, _ := pem.Decode([]byte(pemString))
 			cert, _ := x509.ParseCertificate(pemBlock.Bytes)
 			defer xmlFile.Close()
-			xmlBytes, _ := ioutil.ReadAll(xmlFile)
+			xmlBytes, _ := io.ReadAll(xmlFile)
 			validator := Validator{}
 			validator.SetXML(string(xmlBytes))
 			validator.Certificates = append(validator.Certificates, *cert)
