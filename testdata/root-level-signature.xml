@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+    <SignedInfo>
+        <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"></CanonicalizationMethod>
+        <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"></SignatureMethod>
+        <Reference URI="#test">
+            <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></DigestMethod>
+            <Transforms>
+                <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"></Transform>
+            </Transforms>
+            <DigestValue></DigestValue>
+        </Reference>
+    </SignedInfo>
+    <SignatureValue></SignatureValue>
+    <KeyInfo>
+        <X509Data>
+            <X509Certificate>testtest</X509Certificate>
+        </X509Data>
+    </KeyInfo>
+    <Object xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Id="test">
+      <Foo>name</Foo>
+    </Object>
+</Signature>

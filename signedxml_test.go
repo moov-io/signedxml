@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/beevik/etree"
@@ -98,6 +99,26 @@ func TestSign(t *testing.T) {
 
 	})
 
+	Convey("Signature at the Root level, surrounding the Object", t, func() {
+		xml, _ := os.ReadFile(filepath.Join("testdata", "root-level-signature.xml"))
+
+		doc := etree.NewDocument()
+		doc.ReadFromBytes(xml)
+		signature := doc.FindElement("//Signature")
+		t.Logf("signature: %#v", signature)
+
+		signer, _ := NewSigner(string(xml))
+		signer.SetReferenceIDAttribute("Id")
+		xmlStr, err := signer.Sign(key)
+		So(err, ShouldBeNil)
+
+		validator, _ := NewValidator(xmlStr)
+		validator.SetReferenceIDAttribute("Id")
+		validator.Certificates = append(validator.Certificates, *cert)
+		refs, err := validator.ValidateReferences()
+		So(err, ShouldBeNil)
+		So(len(refs), ShouldEqual, 1)
+	})
 }
 
 func TestValidate(t *testing.T) {
@@ -214,18 +235,6 @@ func TestValidate(t *testing.T) {
 func TestEnvelopedSignatureProcess(t *testing.T) {
 	Convey("Given a document without a Signature elemement", t, func() {
 		doc := "<doc></doc>"
-		Convey("When ProcessDocument is called", func() {
-			envSig := EnvelopedSignature{}
-			_, err := envSig.Process(doc, "")
-			Convey("Then an error occurs", func() {
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "signedxml:")
-			})
-		})
-	})
-
-	Convey("Given an unparented signature element", t, func() {
-		doc := "<Signature></Signature>"
 		Convey("When ProcessDocument is called", func() {
 			envSig := EnvelopedSignature{}
 			_, err := envSig.Process(doc, "")
