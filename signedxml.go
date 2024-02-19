@@ -112,7 +112,7 @@ func (s *signatureData) SetSignature(sig string) error {
 }
 
 func (s *signatureData) parseEnvelopedSignature() error {
-	sig := s.xml.FindElement(".//Signature")
+	sig := s.xml.FindElement("//Signature")
 	if sig != nil {
 		s.signature = sig
 	} else {

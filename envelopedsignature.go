@@ -2,6 +2,7 @@ package signedxml
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/beevik/etree"
 )
@@ -57,15 +58,23 @@ func (e EnvelopedSignature) Process(inputXML string, transformXML string) (outpu
 }
 
 func (e EnvelopedSignature) processElement(inputXML *etree.Element, transformXML string) (outputXML *etree.Element, err error) {
-	sig := inputXML.FindElement(".//Signature")
+	sig := inputXML.FindElement("//Signature")
+	if sig == nil {
+		// TODO(adam): Why can't ./Signature (or /Signature, or //Signature) find the root Signature element?
+		if strings.EqualFold(inputXML.Tag, "Signature") {
+			sig = inputXML
+		}
+	}
 	if sig == nil {
 		return nil, errors.New("signedxml: unable to find Signature node")
 	}
 
 	sigParent := sig.Parent()
-	elem := sigParent.RemoveChild(sig)
-	if elem == nil {
-		return nil, errors.New("signedxml: unable to remove Signature element")
+	if sigParent != nil {
+		elem := sigParent.RemoveChild(sig)
+		if elem == nil {
+			return nil, errors.New("signedxml: unable to remove Signature element")
+		}
 	}
 
 	return inputXML, nil
