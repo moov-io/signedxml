@@ -168,6 +168,9 @@ var example37SubsetExpression = `<!-- Evaluate with declaration xmlns:ietf="http
 
 var example37Output = `<e1 xmlns="http://www.ietf.org" xmlns:w3c="http://www.w3.org"><e3 xmlns="" id="E3" xml:space="preserve"></e3></e1>`
 
+var exampleGHIssue50Input = `<a><!-- comment0 --><!-- comment1 --><!-- comment2 --></a>`
+var exampleGHIssue50Output = `<a></a>`
+
 type exampleXML struct {
 	input        string
 	output       string
@@ -190,6 +193,7 @@ func TestCanonicalizationExamples(t *testing.T) {
 			// http://stackoverflow.com/questions/6002619/unmarshal-an-iso-8859-1-xml-input-in-go
 			// "(Example 3.6)": {input: example36Input, output: example36Output},
 			// "(Example 3.7)": {input: example37Input, output: example37Output, expression: example37SubsetExpression},
+			"(Example from GitHub Issue #50)": {input: exampleGHIssue50Input, output: exampleGHIssue50Output},
 		}
 		for description, test := range cases {
 			Convey(fmt.Sprintf("When transformed %s", description), func() {

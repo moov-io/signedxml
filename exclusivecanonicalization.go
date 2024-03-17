@@ -161,7 +161,9 @@ func (e ExclusiveCanonicalization) processRecursive(node *etree.Element,
 
 	newDefaultNS, newPrefixesInScope := e.renderAttributes(node, prefixesInScope, defaultNS)
 
-	for _, child := range node.Child {
+	for i := 0; i < len(node.Child); i++ {
+		child := node.Child[i]
+
 		oldNamespaces := e.namespaces
 		e.namespaces = copyNamespace(oldNamespaces)
 
@@ -169,6 +171,7 @@ func (e ExclusiveCanonicalization) processRecursive(node *etree.Element,
 		case *etree.Comment:
 			if !e.WithComments {
 				removeTokenFromElement(etree.Token(child), node)
+				i--
 			}
 		case *etree.Element:
 			e.processRecursive(child, newPrefixesInScope, newDefaultNS)
