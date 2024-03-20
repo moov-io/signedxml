@@ -1,3 +1,10 @@
+## v1.2.1 (Released 2024-03-20)
+
+IMPROVEMENTS
+
+- fix: handle adjacent comments during canonicalization
+- feat: support http://www.w3.org/TR/2001/REC-xml-c14n-20010315
+
 ## v1.2.0 (Released 2024-02-19)
 
 ADDITIONS
