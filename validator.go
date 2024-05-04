@@ -19,8 +19,7 @@ type Validator struct {
 
 // NewValidator returns a *Validator for the XML provided
 func NewValidator(xml string) (*Validator, error) {
-	doc := etree.NewDocument()
-	err := doc.ReadFromString(xml)
+	doc, err := parseXML(xml)
 	if err != nil {
 		return nil, err
 	}

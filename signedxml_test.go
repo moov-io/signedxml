@@ -14,6 +14,46 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func TestSignatureLogicWithCLibXMLSec(t *testing.T) {
+	pemString, _ := os.ReadFile("./testdata/rsa.crt")
+	pemBlock, _ := pem.Decode([]byte(pemString))
+	cert, _ := x509.ParseCertificate(pemBlock.Bytes)
+
+	b64Bytes, _ := os.ReadFile("./testdata/rsa.key.b64")
+	pemString, _ = base64.StdEncoding.DecodeString(string(b64Bytes))
+	pemBlock, _ = pem.Decode([]byte(pemString))
+	key, _ := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
+
+	xmlGeneratedSign, _ := os.ReadFile("./testdata/signature-generate-using-xmlseclib.xml")
+	signedDoc := etree.NewDocument()
+	signedDoc.ReadFromString(string(xmlGeneratedSign))
+	signature := signedDoc.Root()
+	digestValueElement := signature.SelectElement("Signature").SelectElement("SignedInfo").SelectElement("Reference").SelectElement("DigestValue")
+
+	Convey("Given an XML, certificate, and RSA key", t, func() {
+		xml, _ := os.ReadFile("./testdata/doc.xml")
+
+		Convey("When generating the signature", func() {
+			signer, _ := NewSigner(string(xml))
+			xmlStr, err := signer.Sign(key)
+			generatedDigestValue := signer.signedInfo.SelectElement("Reference").SelectElement("DigestValue")
+			Convey("Then no error occurs", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("And the signature should be valid", func() {
+				validator, _ := NewValidator(xmlStr)
+				validator.Certificates = append(validator.Certificates, *cert)
+				refs, err := validator.ValidateReferences()
+				So(err, ShouldBeNil)
+				So(len(refs), ShouldEqual, 1)
+			})
+			Convey("And signature digest should match with signature generated generated using xmlsec", func() {
+				So(generatedDigestValue.Text(), ShouldEqual, digestValueElement.Text())
+			})
+		})
+	})
+}
+
 func TestSign(t *testing.T) {
 	pemString, _ := os.ReadFile("./testdata/rsa.crt")
 	pemBlock, _ := pem.Decode([]byte(pemString))

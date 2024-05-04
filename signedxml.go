@@ -339,3 +339,26 @@ func calculateHash(reference *etree.Element, doc *etree.Document) (string, error
 
 	return calculatedValue, nil
 }
+
+// removeXMLDeclaration searches for and removes the XML declaration processing instruction.
+func removeXMLDeclaration(doc *etree.Document) {
+	for _, t := range doc.Child {
+		if p, ok := t.(*etree.ProcInst); ok && p.Target == "xml" {
+			doc.RemoveChild(p)
+			break
+		}
+	}
+}
+
+// parseXML parses an XML string into an etree.Document and removes the XML declaration if present.
+func parseXML(xml string) (*etree.Document, error) {
+	doc := etree.NewDocument()
+	if err := doc.ReadFromString(xml); err != nil {
+		return nil, err
+	}
+
+	doc.ReadSettings.PreserveCData = true
+	removeXMLDeclaration(doc)
+
+	return doc, nil
+}
