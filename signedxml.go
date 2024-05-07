@@ -345,14 +345,14 @@ func removeXMLDeclaration(doc *etree.Document) {
 	for _, t := range doc.Child {
 		if p, ok := t.(*etree.ProcInst); ok && p.Target == "xml" {
 			doc.RemoveChild(p)
-
-			// Remove CharData right after removing the XML declaration
-			for _, t2 := range doc.Child {
-				if p2, ok := t2.(*etree.CharData); ok {
-					doc.RemoveChild(p2)
-				}
-			}
 			break
+		}
+	}
+
+	// Remove CharData right after removing the XML declaration
+	for _, t2 := range doc.Child {
+		if p2, ok := t2.(*etree.CharData); ok {
+			doc.RemoveChild(p2)
 		}
 	}
 }
