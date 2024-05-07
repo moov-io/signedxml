@@ -50,6 +50,13 @@ func TestSignatureLogicWithCLibXMLSec(t *testing.T) {
 			Convey("And signature digest should match with signature generated generated using xmlsec", func() {
 				So(generatedDigestValue.Text(), ShouldEqual, digestValueElement.Text())
 			})
+			Convey("And signature generated using xmlsec should be valid", func() {
+				validator, _ := NewValidator(string(xmlGeneratedSign))
+				validator.Certificates = append(validator.Certificates, *cert)
+				refs, err := validator.ValidateReferences()
+				So(err, ShouldBeNil)
+				So(len(refs), ShouldEqual, 1)
+			})
 		})
 	})
 }
