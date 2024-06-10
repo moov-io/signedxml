@@ -1,3 +1,15 @@
+## v1.2.2 (Released 2024-06-10)
+
+IMPROVEMENTS
+
+- fix: allow no Transforms when signing
+- fix: removed XML declaration before signature operations
+- examples: run 3.6 in tests
+
+BUILD
+
+- fix(deps): update module github.com/beevik/etree to v1.4.0
+
 ## v1.2.1 (Released 2024-03-20)
 
 IMPROVEMENTS
