@@ -233,17 +233,19 @@ func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etr
 		}
 		path := fmt.Sprintf(".//[@%s='%s']", refIDAttribute, uri)
 		e := inputDoc.FindElement(path)
-		if e != nil {
-			outputDoc = etree.NewDocument()
-			outputDoc.SetRoot(e.Copy())
-		} else {
+		if e == nil {
 			// SAML v1.1 Assertions use AssertionID
 			path := fmt.Sprintf(".//[@AssertionID='%s']", uri)
-			e := inputDoc.FindElement(path)
-			if e != nil {
-				outputDoc = etree.NewDocument()
-				outputDoc.SetRoot(e.Copy())
+			e = inputDoc.FindElement(path)
+		}
+		if e != nil {
+			// Attempt namespace propagation
+			if err := s.propagateNamespace(e, e, inputDoc); err != nil {
+				return nil, err
 			}
+			// Turn the node into a full document we can work on
+			outputDoc = etree.NewDocument()
+			outputDoc.SetRoot(e.Copy())
 		}
 	}
 
@@ -252,6 +254,67 @@ func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etr
 	}
 
 	return outputDoc, nil
+}
+
+func (s *signatureData) propagateNamespace(e *etree.Element, base *etree.Element, inputDoc *etree.Document) error {
+	// We begin by trying to resolve any references for the top level element, then we can recuse trying to resolve things
+	attr, err := findNamespace(e, base, inputDoc)
+	if err != nil {
+		return err
+	}
+	if attr != nil {
+		// Apply it to our current element
+		e.Attr = append(e.Attr, *attr)
+		// We need to sort such that namespaces come first and I have no idea how to make that happen here
+	}
+	for _, elem := range e.ChildElements() {
+		if err := s.propagateNamespace(elem, base, inputDoc); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// findNamespace looks to find the namespace for e, returning it if and only if it's inside inputDoc but outside base.
+// If there is a reference to the namespace and it can't be found an error will be returned.
+func findNamespace(e *etree.Element, base *etree.Element, inputDoc *etree.Document) (*etree.Attr, error) {
+	xlmns := "xmlns:" + e.Space
+	// If there isn't a namespace, we can skip this whole function
+	if e.Space == "" {
+		return nil, nil
+	}
+	// If the namespace's reference is in the element itself, we have nothing to do
+	if e.SelectAttr(xlmns) != nil {
+		return nil, nil
+	}
+	// Start searching up the chain for a match
+	current := e
+	for {
+		current = current.Parent()
+		if current == nil {
+			return nil, fmt.Errorf("couldn't resolve namespace reference of %s:%s", e.Space, e.Tag)
+		}
+		if attr := current.SelectAttr(xlmns); attr != nil {
+			// We found it, last thing to do is check and see if it's inside or outside our input doc
+			if containsElement(base, current) {
+				return nil, nil
+			}
+			return attr, nil
+		}
+	}
+}
+
+// containsElement returns true if e is base or is base has e as any of its child nodes recursively
+func containsElement(base *etree.Element, e *etree.Element) bool {
+	if base == e {
+		return true
+	}
+	for _, child := range base.ChildElements() {
+		if containsElement(child, e) {
+			return true
+		}
+	}
+	return false
 }
 
 func getCertFromPEMString(pemString string) (*x509.Certificate, error) {
