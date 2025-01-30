@@ -5,7 +5,7 @@ go 1.21.0
 toolchain go1.23.5
 
 require (
-	github.com/beevik/etree v1.4.1
+	github.com/beevik/etree v1.5.0
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/stretchr/testify v1.10.0
