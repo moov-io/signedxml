@@ -181,7 +181,7 @@ func TestValidate(t *testing.T) {
 		}
 
 		for description, test := range cases {
-			Convey(fmt.Sprintf("When Validate is called %s", description), func() {
+			Convey("When Validate is called "+description, func() {
 				xmlFile, err := os.Open(test)
 				if err != nil {
 					fmt.Println("Error opening file:", err)
@@ -239,7 +239,7 @@ func TestValidate(t *testing.T) {
 			"(Non-existing Reference)": "./testdata/invalid-signature-non-existing-reference.xml",
 		}
 		for description, test := range cases {
-			Convey(fmt.Sprintf("When ValidateReferences is called %s", description), func() {
+			Convey("When ValidateReferences is called "+description, func() {
 				xmlBytes, err := os.ReadFile(test)
 				if err != nil {
 					fmt.Println("Error reading file:", err)
@@ -260,7 +260,7 @@ func TestValidate(t *testing.T) {
 			"(Wrong Sig Value)": "./testdata/invalid-signature-signature-value.xml",
 		}
 		for description, test := range cases {
-			Convey(fmt.Sprintf("When ValidateReferences is called %s", description), func() {
+			Convey("When ValidateReferences is called "+description, func() {
 				xmlBytes, err := os.ReadFile(test)
 				if err != nil {
 					fmt.Println("Error reading file:", err)

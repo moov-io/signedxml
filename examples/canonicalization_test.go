@@ -1,7 +1,6 @@
 package examples
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/moov-io/signedxml"
@@ -196,7 +195,7 @@ func TestCanonicalizationExamples(t *testing.T) {
 			"(Example from GitHub Issue #50)": {input: exampleGHIssue50Input, output: exampleGHIssue50Output},
 		}
 		for description, test := range cases {
-			Convey(fmt.Sprintf("When transformed %s", description), func() {
+			Convey("When transformed "+description, func() {
 				transform := signedxml.ExclusiveCanonicalization{
 					WithComments: test.withComments,
 				}
