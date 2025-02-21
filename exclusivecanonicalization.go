@@ -49,22 +49,36 @@ type ExclusiveCanonicalization struct {
 	namespaces                   map[string]string
 }
 
-// Process is called to transfrom the XML using the ExclusiveCanonicalization
-// algorithm
-func (e ExclusiveCanonicalization) Process(inputXML string,
+// see CanonicalizationAlgorithm.ProcessElement
+func (e ExclusiveCanonicalization) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
+	doc := etree.NewDocument()
+	doc.SetRoot(inputXML.Copy())
+	return e.processDocument(doc, transformXML)
+}
+
+// see CanonicalizationAlgorithm.ProcessDocument
+func (e ExclusiveCanonicalization) ProcessDocument(doc *etree.Document,
 	transformXML string) (outputXML string, err error) {
 
-	e.namespaces = make(map[string]string)
+	return e.processDocument(doc.Copy(), transformXML)
+}
 
+// see CanonicalizationAlgorithm.Process
+func (e ExclusiveCanonicalization) Process(inputXML string, transformXML string) (outputXML string, err error) {
 	doc := etree.NewDocument()
-	doc.WriteSettings.CanonicalEndTags = true
-	doc.WriteSettings.CanonicalText = true
-	doc.WriteSettings.CanonicalAttrVal = true
-
 	err = doc.ReadFromString(inputXML)
 	if err != nil {
 		return "", err
 	}
+	return e.ProcessDocument(doc, transformXML)
+}
+
+func (e ExclusiveCanonicalization) processDocument(doc *etree.Document, transformXML string) (outputXML string, err error) {
+	e.namespaces = make(map[string]string)
+
+	doc.WriteSettings.CanonicalEndTags = true
+	doc.WriteSettings.CanonicalText = true
+	doc.WriteSettings.CanonicalAttrVal = true
 
 	e.loadPrefixList(transformXML)
 	e.processDocLevelNodes(doc)
@@ -145,11 +159,13 @@ func (e ExclusiveCanonicalization) processDocLevelNodes(doc *etree.Document) {
 func (e ExclusiveCanonicalization) processRecursive(node *etree.Element,
 	prefixesInScope []string, defaultNS string) {
 
-	newDefaultNS, newPrefixesInScope :=
-		e.renderAttributes(node, prefixesInScope, defaultNS)
+	newDefaultNS, newPrefixesInScope := e.renderAttributes(node, prefixesInScope, defaultNS)
 
 	for i := 0; i < len(node.Child); i++ {
 		child := node.Child[i]
+
+		oldNamespaces := e.namespaces
+		e.namespaces = copyNamespace(oldNamespaces)
 
 		switch child := child.(type) {
 		case *etree.Comment:
@@ -160,13 +176,12 @@ func (e ExclusiveCanonicalization) processRecursive(node *etree.Element,
 		case *etree.Element:
 			e.processRecursive(child, newPrefixesInScope, newDefaultNS)
 		}
+
+		e.namespaces = oldNamespaces
 	}
 }
 
-func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element,
-	prefixesInScope []string, defaultNS string) (newDefaultNS string,
-	newPrefixesInScope []string) {
-
+func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element, prefixesInScope []string, defaultNS string) (newDefaultNS string, newPrefixesInScope []string) {
 	currentNS := node.SelectAttrValue("xmlns", defaultNS)
 	elementAttributes := []etree.Attr{}
 	nsListToRender := make(map[string]string)
@@ -186,9 +201,7 @@ func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element,
 			prefixesInScope = append(prefixesInScope, node.Space)
 		}
 	} else if defaultNS != currentNS {
-		newDefaultNS = currentNS
-		elementAttributes = append(elementAttributes,
-			etree.Attr{Key: "xmlns", Value: currentNS})
+		elementAttributes = append(elementAttributes, etree.Attr{Key: "xmlns", Value: currentNS})
 	}
 
 	for _, attr := range node.Attr {
@@ -207,7 +220,10 @@ func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element,
 			attr.Space != "xmlns" &&
 			!contains(prefixesInScope, attr.Space) {
 
-			nsListToRender["xmlns:"+attr.Space] = e.namespaces[attr.Space]
+			if attr.Space != "xml" {
+				nsListToRender["xmlns:"+attr.Space] = e.namespaces[attr.Space]
+			}
+
 			prefixesInScope = append(prefixesInScope, attr.Space)
 		}
 
@@ -302,4 +318,12 @@ func isWhitespace(s string) bool {
 		}
 	}
 	return true
+}
+
+func copyNamespace(namespaces map[string]string) map[string]string {
+	newVersion := map[string]string{}
+	for index, element := range namespaces {
+		newVersion[index] = element
+	}
+	return newVersion
 }

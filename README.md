@@ -1,15 +1,23 @@
-## signedxml
+[![Moov Banner Logo](https://user-images.githubusercontent.com/20115216/104214617-885b3c80-53ec-11eb-8ce0-9fc745fb5bfc.png)](https://github.com/moov-io)
 
-[![Build Status](https://travis-ci.org/ma314smith/signedxml.svg?branch=master)](https://travis-ci.org/ma314smith/signedxml)
-[![GoDoc](https://godoc.org/github.com/ma314smith/signedxml?status.svg)](https://godoc.org/github.com/ma314smith/signedxml)
+## moov-io/signedxml
+
+[![GoDoc](https://godoc.org/github.com/moov-io/signedxml?status.svg)](https://godoc.org/github.com/moov-io/signedxml)
+[![Build Status](https://github.com/moov-io/signedxml/workflows/Go/badge.svg)](https://github.com/moov-io/signedxml/actions)
+[![Coverage Status](https://codecov.io/gh/moov-io/signedxml/branch/master/graph/badge.svg)](https://codecov.io/gh/moov-io/signedxml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/moov-io/signedxml)](https://goreportcard.com/report/github.com/moov-io/signedxml)
+[![Repo Size](https://img.shields.io/github/languages/code-size/moov-io/signedxml?label=project%20size)](https://github.com/moov-io/signedxml)
+[![MIT  License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/moov-io/signedxml/master/LICENSE.md)
+[![Slack Channel](https://slack.moov.io/badge.svg?bg=e01563&fgColor=fffff)](https://slack.moov.io/)
+[![Twitter](https://img.shields.io/twitter/follow/moov?style=social)](https://twitter.com/moov?lang=en)
 
 The signedxml package transforms and validates signed xml documents. The main use case is to support Single Sign On protocols like SAML and WS-Federation.
 
-Other packages that provide similar functionality rely on C libraries, which makes them difficult to run across platforms without significant configuration.  `signedxml` is written in pure go, and can be easily used on any platform.
+Other packages that provide similar functionality rely on C libraries, which makes them difficult to run across platforms without significant configuration.  `signedxml` is written in pure go, and can be easily used on any platform. This package was originally created by [Matt Smith](https://github.com/ma314smith) and is in use at Moov Financial.
 
 ### Install
 
-`go get github.com/ma314smith/signedxml`
+`go get github.com/moov-io/signedxml`
 
 ### Included Algorithms
 
@@ -47,7 +55,7 @@ Other packages that provide similar functionality rely on C libraries, which mak
 ### Examples
 
 #### Validating signed XML
-If your signed xml contains the signature and certificate, then you can just pass in the xml and call `Validate()`.
+If your signed xml contains the signature and certificate, then you can just pass in the xml and call `ValidateReferences()`.
 ```go
 validator, err := signedxml.NewValidator(`<YourXMLString></YourXMLString>`)
 xml, err = validator.ValidateReferences()
@@ -95,5 +103,31 @@ signedxml.CanonicalizationAlgorithms["http://myTranform"] = NoChangeCanonicaliza
 
 See `envelopedsignature.go` and `exclusivecanonicalization.go` for examples of actual implementations.
 
-### Contributions
+### Using a custom reference ID attribute
+It is possible to set a custom reference ID attribute for both the signer and the validator. The default value is `"ID"`
+
+Signer example:
+```go
+signer.SetReferenceIDAttribute("customId")
+```
+
+Validator example:
+```go
+validator.SetReferenceIDAttribute("customId")
+```
+
+## Getting help
+
+ channel | info
+ ------- | -------
+Twitter [@moov](https://twitter.com/moov)	| You can follow Moov.io's Twitter feed to get updates on our project(s). You can also tweet us questions or just share blogs or stories.
+[GitHub Issue](https://github.com/moov-io/signedxml/issues/new) | If you are able to reproduce a problem please open a GitHub Issue under the specific project that caused the error.
+[moov-io slack](https://slack.moov.io/) | Join our slack channel to have an interactive discussion about the development of the project.
+
+## Contributions
+
 Contributions are welcome. Just fork the repo and send a pull request.
+
+## Releated Projects
+
+- [Moov RTP20022](http://github.com/moov-io/rtp20022) implements ISO20022 messages in Go for Real Time Payments (RTP)

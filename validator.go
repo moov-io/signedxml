@@ -19,13 +19,17 @@ type Validator struct {
 
 // NewValidator returns a *Validator for the XML provided
 func NewValidator(xml string) (*Validator, error) {
-	doc := etree.NewDocument()
-	err := doc.ReadFromString(xml)
+	doc, err := parseXML(xml)
 	if err != nil {
 		return nil, err
 	}
 	v := &Validator{signatureData: signatureData{xml: doc}}
 	return v, nil
+}
+
+// SetReferenceIDAttribute set the referenceIDAttribute
+func (v *Validator) SetReferenceIDAttribute(refIDAttribute string) {
+	v.signatureData.refIDAttribute = refIDAttribute
 }
 
 // SetXML is used to assign the XML document that the Validator will verify
@@ -43,15 +47,6 @@ func (v *Validator) SigningCert() x509.Certificate {
 	return v.signingCert
 }
 
-// Validate validates the Reference digest values, and the signature value
-// over the SignedInfo.
-//
-// Deprecated: Use ValidateReferences instead
-func (v *Validator) Validate() error {
-	_, err := v.ValidateReferences()
-	return err
-}
-
 // ValidateReferences validates the Reference digest values, and the signature value
 // over the SignedInfo.
 //
@@ -59,7 +54,8 @@ func (v *Validator) Validate() error {
 // Otherwise, an external signature should be assigned using
 // Validator.SetSignature.
 //
-// The references returned by this method can be used to verify what was signed.
+// The references returned contain validated XML from the signature and must be used.
+// Callers that ignore the returned references are vulnerable to XML injection.
 func (v *Validator) ValidateReferences() ([]string, error) {
 	if err := v.loadValuesFromXML(); err != nil {
 		return nil, err
@@ -111,7 +107,9 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 	references := v.signedInfo.FindElements("./Reference")
 	for _, ref := range references {
 		doc := v.xml.Copy()
-		if transforms := ref.SelectElement("Transforms"); transforms != nil {
+
+		transforms := ref.SelectElement("Transforms")
+		if transforms != nil {
 			for _, transform := range transforms.SelectElements("Transform") {
 				doc, err = processTransform(transform, doc)
 				if err != nil {
@@ -120,7 +118,7 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 			}
 		}
 
-		doc, err = getReferencedXML(ref, doc)
+		doc, err = v.getReferencedXML(ref, doc)
 		if err != nil {
 			return nil, err
 		}
@@ -147,14 +145,7 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 }
 
 func (v *Validator) validateSignature() error {
-	doc := etree.NewDocument()
-	doc.SetRoot(v.signedInfo.Copy())
-	signedInfo, err := doc.WriteToString()
-	if err != nil {
-		return err
-	}
-
-	canonSignedInfo, err := v.canonAlgorithm.Process(signedInfo, "")
+	canonSignedInfo, err := v.canonAlgorithm.ProcessElement(v.signedInfo, "")
 	if err != nil {
 		return err
 	}

@@ -1,14 +1,14 @@
-package main
+package examples
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
-	"github.com/ma314smith/signedxml"
+	"github.com/moov-io/signedxml"
 )
 
-func main() {
+func ExampleValidate() {
 	testValidator()
 	testExclCanon()
 }
@@ -21,15 +21,18 @@ func testValidator() {
 	}
 	defer xmlFile.Close()
 
-	xmlBytes, _ := ioutil.ReadAll(xmlFile)
+	xmlBytes, _ := io.ReadAll(xmlFile)
 
 	validator, err := signedxml.NewValidator(string(xmlBytes))
 	if err != nil {
 		fmt.Printf("Validation Error: %s", err)
 	} else {
-		err = validator.Validate()
+		refs, err := validator.ValidateReferences()
 		if err != nil {
-			fmt.Printf("Validation Error: %s", err)
+			fmt.Printf("Validation Error: %s\n", err)
+		}
+		if len(refs) == 0 {
+			fmt.Println("ERROR: No Validated References")
 		} else {
 			fmt.Println("Example Validation Succeeded")
 		}
@@ -59,7 +62,7 @@ func testExclCanon() {
 	resultXML, err := transform.Process(input, "")
 
 	if err != nil {
-		fmt.Printf("Transformation Error: %s", err)
+		fmt.Printf("Transformation Error: %s\n", err)
 	} else {
 		if resultXML == output {
 			fmt.Println("Example Tranformation Succeeded")

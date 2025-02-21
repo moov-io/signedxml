@@ -8,14 +8,11 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"log"
-	"os"
 	"strings"
 
 	"github.com/beevik/etree"
+	dsig "github.com/russellhaering/goxmldsig"
 )
-
-var logger = log.New(os.Stdout, "DEBUG-SIGNEDXML: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 func init() {
 	hashAlgorithms = map[string]crypto.Hash{
@@ -48,6 +45,10 @@ func init() {
 		"http://www.w3.org/TR/2001/REC-xml-c14n-20010315":       ExclusiveCanonicalization{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#":               ExclusiveCanonicalization{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#WithComments":   ExclusiveCanonicalization{WithComments: true},
+		dsig.CanonicalXML11AlgorithmId.String():                 &c14N11Canonicalizer{},
+		dsig.CanonicalXML11WithCommentsAlgorithmId.String():     &c14N11Canonicalizer{WithComments: true},
+		dsig.CanonicalXML10RecAlgorithmId.String():              &c14N10RecCanonicalizer{},
+		dsig.CanonicalXML10WithCommentsAlgorithmId.String():     &c14N10RecCanonicalizer{WithComments: true},
 	}
 }
 
@@ -61,6 +62,18 @@ func init() {
 // no child elements in Transform (or CanonicalizationMethod), then an empty
 // string will be passed through.
 type CanonicalizationAlgorithm interface {
+	// ProcessElement is called to transform an XML Element within an XML Document
+	// using the implementing algorithm
+	ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error)
+
+	// ProcessDocument is called to transform an XML Document using the implementing
+	// algorithm.
+	ProcessDocument(doc *etree.Document, transformXML string) (outputXML string, err error)
+
+	// Process is called to transform a string containing XML text using the implementing
+	// algorithm. The inputXML parameter should contain a complete XML Document. It is not
+	// correct to use this function on XML fragments. Retained for backward comparability.
+	// Use ProcessElement or ProcessDocument if possible.
 	Process(inputXML string, transformXML string) (outputXML string, err error)
 }
 
@@ -69,9 +82,10 @@ type CanonicalizationAlgorithm interface {
 // CanonicalizationAlgorithm interface.
 //
 // Implementations are provided for the following transforms:
-//  http://www.w3.org/2001/10/xml-exc-c14n# (ExclusiveCanonicalization)
-//  http://www.w3.org/2001/10/xml-exc-c14n#WithComments (ExclusiveCanonicalizationWithComments)
-//  http://www.w3.org/2000/09/xmldsig#enveloped-signature (EnvelopedSignature)
+//
+//	http://www.w3.org/2001/10/xml-exc-c14n# (ExclusiveCanonicalization)
+//	http://www.w3.org/2001/10/xml-exc-c14n#WithComments (ExclusiveCanonicalizationWithComments)
+//	http://www.w3.org/2000/09/xmldsig#enveloped-signature (EnvelopedSignature)
 //
 // Custom implementations can be added to the map
 var CanonicalizationAlgorithms map[string]CanonicalizationAlgorithm
@@ -86,6 +100,7 @@ type signatureData struct {
 	sigValue       string
 	sigAlgorithm   x509.SignatureAlgorithm
 	canonAlgorithm CanonicalizationAlgorithm
+	refIDAttribute string
 }
 
 // SetSignature can be used to assign an external signature for the XML doc
@@ -98,7 +113,7 @@ func (s *signatureData) SetSignature(sig string) error {
 }
 
 func (s *signatureData) parseEnvelopedSignature() error {
-	sig := s.xml.FindElement(".//Signature")
+	sig := s.xml.FindElement("//Signature")
 	if sig != nil {
 		s.signature = sig
 	} else {
@@ -165,13 +180,19 @@ func (s *signatureData) parseSigAlgorithm() error {
 	}
 
 	sigAlgoURI = sigMethod.SelectAttrValue("Algorithm", "")
+	if sigAlgoURI == "" {
+		return errors.New("signedxml: Unable to find Algorithm in " +
+			"SignatureMethod element")
+	}
+
 	sigAlgo, ok := signatureAlgorithms[sigAlgoURI]
 	if ok {
 		s.sigAlgorithm = sigAlgo
 		return nil
 	}
 
-	return errors.New("signedxml: Unable to find Algorithm in SignatureMethod element")
+	return errors.New("signedxml: Unsupported Algorithm " + sigAlgoURI + " in " +
+		"SignatureMethod")
 }
 
 func (s *signatureData) parseCanonAlgorithm() error {
@@ -184,24 +205,33 @@ func (s *signatureData) parseCanonAlgorithm() error {
 	}
 
 	canonAlgoURI = canonMethod.SelectAttrValue("Algorithm", "")
+	if canonAlgoURI == "" {
+		return errors.New("signedxml: Unable to find Algorithm in " +
+			"CanonicalizationMethod element")
+	}
+
 	canonAlgo, ok := CanonicalizationAlgorithms[canonAlgoURI]
 	if ok {
 		s.canonAlgorithm = canonAlgo
 		return nil
 	}
 
-	return errors.New("signedxml: Unable to find Algorithm in " +
-		"CanonicalizationMethod element")
+	return errors.New("signedxml: Unsupported Algorithm " + canonAlgoURI + " in " +
+		"CanonicalizationMethod")
 }
 
-func getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
+func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
 	uri := reference.SelectAttrValue("URI", "")
 	uri = strings.Replace(uri, "#", "", 1)
 	// populate doc with the referenced xml from the Reference URI
 	if uri == "" {
 		outputDoc = inputDoc
 	} else {
-		path := fmt.Sprintf(".//[@id='%s']", uri)
+		refIDAttribute := "ID"
+		if s.refIDAttribute != "" {
+			refIDAttribute = s.refIDAttribute
+		}
+		path := fmt.Sprintf(".//[@%s='%s']", refIDAttribute, uri)
 		e := inputDoc.FindElement(path)
 		if e != nil {
 			outputDoc = etree.NewDocument()
@@ -265,12 +295,7 @@ func processTransform(transform *etree.Element,
 		}
 	}
 
-	docString, err := docIn.WriteToString()
-	if err != nil {
-		return nil, err
-	}
-
-	docString, err = transformAlgo.Process(docString, transformContent)
+	docString, err := transformAlgo.ProcessDocument(docIn, transformContent)
 	if err != nil {
 		return nil, err
 	}
@@ -308,13 +333,39 @@ func calculateHash(reference *etree.Element, doc *etree.Document) (string, error
 		return "", err
 	}
 
-	//ioutil.WriteFile("C:/Temp/SignedXML/Suspect.xml", docBytes, 0644)
-	//s, _ := doc.WriteToString()
-	//logger.Println(s)
-
 	h.Write(docBytes)
 	d := h.Sum(nil)
 	calculatedValue := base64.StdEncoding.EncodeToString(d)
 
 	return calculatedValue, nil
+}
+
+// removeXMLDeclaration searches for and removes the XML declaration processing instruction.
+func removeXMLDeclaration(doc *etree.Document) {
+	for _, t := range doc.Child {
+		if p, ok := t.(*etree.ProcInst); ok && p.Target == "xml" {
+			doc.RemoveChild(p)
+			break
+		}
+	}
+
+	// Remove CharData right after removing the XML declaration
+	for _, t2 := range doc.Child {
+		if p2, ok := t2.(*etree.CharData); ok {
+			doc.RemoveChild(p2)
+		}
+	}
+}
+
+// parseXML parses an XML string into an etree.Document and removes the XML declaration if present.
+func parseXML(xml string) (*etree.Document, error) {
+	doc := etree.NewDocument()
+	if err := doc.ReadFromString(xml); err != nil {
+		return nil, err
+	}
+
+	doc.ReadSettings.PreserveCData = true
+	removeXMLDeclaration(doc)
+
+	return doc, nil
 }

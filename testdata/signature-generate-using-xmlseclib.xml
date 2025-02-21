@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<References>
+<Book>
+    <Author>
+        <FirstName>Bruce</FirstName>
+        <LastName>Schneier</LastName>
+    </Author>
+    <Title>Applied Cryptography</Title>
+    </Book>
+    <Web>
+    <Title>XMLSec</Title>
+        <Url>http://www.aleksey.com/xmlsec/</Url>
+    </Web>
+  <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+      <SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+          <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+          <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+          <Reference URI="">
+              <Transforms>
+                  <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+              </Transforms>
+              <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+              <DigestValue>kXaaD5Gor8lfNc6eYV31AyF0ekT9H/YY28Oh665mooQ=</DigestValue>
+          </Reference>
+      </SignedInfo>
+      <SignatureValue>Z81G62a0rLOLlgOQyJJN5amwIQ9Wu3vqoCc5CDp8wHz8xVHBGv6MOcaXtzkXOveQ
+KFRuFsxWtlNdxyUyfHzkwHk1BLfzUNbG1BNNjgktJ63leO5w3C4v64/3/HnIPEq1
+eE1uSMO0HDevDrgethWofa2ExxBG2CU8bY4pGzLx95uhBUxk5ilkR1P4tayJp1Va
+U0/roVBZTo8WH+ol15hj5FFV4rjTMPV2kPy9geNsMDZi+N30C/RNHB7n5MScnBC+
+OiCMRmJEcgJpA8/GXCX+y7WFKsVB9p6VO5euC8UUD9dvezvHhMDBwqncjvbnvjOk
+BD58sY6v8LpLIabJUmg3Yt6YjU8dToxv36QrIjsN/m1p5sCsWIMWCdW9MtsR0VGl
+MjkBCQUE70aCUzVbNrtJZaGY+YH9oDvHsLHKzTZusOvYLGCtKwaBcqVEuad/7Nvs
+e7JjYVl6HfyHWZPY6PDt0Q180f+U9QV2C1EdI+r2sbMd+HMft2Jp6Wii3mHZD6hy
+jFr54lztG0x9/X75jwBIaoMv8RtTl8lKfFpBiUc9UrpxKJBOOhMPWiYdwrrAzE1g
+NEHZvU3wbZiFWCAo+4RtCB++pWnoEJ16tuGHKlEIWTJRAnqm4ld1hX0zo7ZVkabD
+ixthaEIn8XmlaL92X5ZAI0P+yFC5kXSDKtLVnf6TgfE=</SignatureValue>
+      <KeyInfo>
+      </KeyInfo>
+  </Signature>
+</References>

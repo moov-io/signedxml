@@ -17,11 +17,11 @@ func init() {
 	signingAlgorithms = map[x509.SignatureAlgorithm]cryptoHash{
 		// MD2 not supported
 		// x509.MD2WithRSA: cryptoHash{algorithm: "rsa", hash: crypto.MD2},
-		x509.MD5WithRSA:    cryptoHash{algorithm: "rsa", hash: crypto.MD5},
-		x509.SHA1WithRSA:   cryptoHash{algorithm: "rsa", hash: crypto.SHA1},
-		x509.SHA256WithRSA: cryptoHash{algorithm: "rsa", hash: crypto.SHA256},
-		x509.SHA384WithRSA: cryptoHash{algorithm: "rsa", hash: crypto.SHA384},
-		x509.SHA512WithRSA: cryptoHash{algorithm: "rsa", hash: crypto.SHA512},
+		x509.MD5WithRSA:    {algorithm: "rsa", hash: crypto.MD5},
+		x509.SHA1WithRSA:   {algorithm: "rsa", hash: crypto.SHA1},
+		x509.SHA256WithRSA: {algorithm: "rsa", hash: crypto.SHA256},
+		x509.SHA384WithRSA: {algorithm: "rsa", hash: crypto.SHA384},
+		x509.SHA512WithRSA: {algorithm: "rsa", hash: crypto.SHA512},
 		// DSA not supported
 		// x509.DSAWithSHA1:  cryptoHash{algorithm: "dsa", hash: crypto.SHA1},
 		// x509.DSAWithSHA256:cryptoHash{algorithm: "dsa", hash: crypto.SHA256},
@@ -46,11 +46,15 @@ type Signer struct {
 
 // NewSigner returns a *Signer for the XML provided
 func NewSigner(xml string) (*Signer, error) {
-	doc := etree.NewDocument()
-	err := doc.ReadFromString(xml)
+	doc, err := parseXML(xml)
 	if err != nil {
 		return nil, err
 	}
+	return NewSignerFromDoc(doc)
+}
+
+// NewSignerFromDoc returns a *Signer for the Document provided
+func NewSignerFromDoc(doc *etree.Document) (*Signer, error) {
 	s := &Signer{signatureData: signatureData{xml: doc}}
 	return s, nil
 }
@@ -87,12 +91,18 @@ func (s *Signer) Sign(privateKey interface{}) (string, error) {
 	return xml, nil
 }
 
+// SetReferenceIDAttribute set the referenceIDAttribute
+func (s *Signer) SetReferenceIDAttribute(refIDAttribute string) {
+	s.signatureData.refIDAttribute = refIDAttribute
+}
+
 func (s *Signer) setDigest() (err error) {
 	references := s.signedInfo.FindElements("./Reference")
 	for _, ref := range references {
 		doc := s.xml.Copy()
 
-		if transforms := ref.SelectElement("Transforms"); transforms != nil {
+		transforms := ref.SelectElement("Transforms")
+		if transforms != nil {
 			for _, transform := range transforms.SelectElements("Transform") {
 				doc, err = processTransform(transform, doc)
 				if err != nil {
@@ -101,7 +111,7 @@ func (s *Signer) setDigest() (err error) {
 			}
 		}
 
-		doc, err := getReferencedXML(ref, doc)
+		doc, err := s.getReferencedXML(ref, doc)
 		if err != nil {
 			return err
 		}
@@ -121,14 +131,7 @@ func (s *Signer) setDigest() (err error) {
 }
 
 func (s *Signer) setSignature() error {
-	doc := etree.NewDocument()
-	doc.SetRoot(s.signedInfo.Copy())
-	signedInfo, err := doc.WriteToString()
-	if err != nil {
-		return err
-	}
-
-	canonSignedInfo, err := s.canonAlgorithm.Process(signedInfo, "")
+	canonSignedInfo, err := s.canonAlgorithm.ProcessElement(s.signedInfo, "")
 	if err != nil {
 		return err
 	}

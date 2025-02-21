@@ -1,0 +1,50 @@
+<Root>
+  <Inner>
+    <Text>Hello World!</Text>
+  </Inner>
+  <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+    Id="xmldsig-186cb59f-c7be-4e9d-a1e8-9fa311754f7e">
+    <ds:SignedInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+      <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" />
+      <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha512" />
+      <ds:Reference Id="xmldsig-186cb59f-c7be-4e9d-a1e8-9fa311754f7e-ref0">
+        <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512" />
+        <ds:DigestValue></ds:DigestValue>
+        <ds:Transforms>
+          <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+          <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+        </ds:Transforms>
+      </ds:Reference>
+      <ds:Reference Type="http://uri.etsi.org/01903#SignedProperties">
+        <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512" />
+        <ds:DigestValue></ds:DigestValue>
+      </ds:Reference>
+    </ds:SignedInfo>
+    <ds:SignatureValue></ds:SignatureValue>
+    <ds:KeyInfo>
+      <ds:X509Data>
+        <ds:X509Certificate>HIDDEN</ds:X509Certificate>
+      </ds:X509Data>
+    </ds:KeyInfo>
+    <ds:Object xmlns:xades="http://uri.etsi.org/01903/v1.3.2#"
+      xmlns:xades141="http://uri.etsi.org/01903/v1.4.1#" Target="">
+      <xades:SignedProperties Id="xmldsig-186cb59f-c7be-4e9d-a1e8-9fa311754f7e-signedprops">
+        <xades:SignedSignatureProperties>
+          <xades:SigningTime>2024-06-04T16:13:09.320+07:00</xades:SigningTime>
+          <xades:SigningCertificate>
+            <xades:Cert>
+              <xades:CertDigest>
+                <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512" />
+                <ds:DigestValue>kiffFUcHZhaLu0OkrPZ1Ui99V784vgh4zJrJNNn82+XWUfDzz24SKy4GMId/hxDFxiQaak0AdJRWHPtLUgutIA==</ds:DigestValue>
+              </xades:CertDigest>
+            </xades:Cert>
+            <xades:IssuerSerial>
+              <ds:X509IssuerName>HIDDEN</ds:X509IssuerName>
+              <ds:X509SerialNumber>HIDDEN</ds:X509SerialNumber>
+            </xades:IssuerSerial>
+          </xades:SigningCertificate>
+        </xades:SignedSignatureProperties>
+      </xades:SignedProperties>
+    </ds:Object>
+  </ds:Signature>
+</Root>

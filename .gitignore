@@ -22,3 +22,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+/bin/
+/gitleaks.tar.gz
+/lint-project.sh
+/coverage.txt
