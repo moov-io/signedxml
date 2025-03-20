@@ -1,3 +1,14 @@
+## v1.2.3 (Released 2025-03-20)
+
+IMPROVEMENTS
+
+- fix: verify type casting
+
+BUILD
+
+- chore(deps): update dependency go to v1.24.1 (#72)
+- fix(deps): update module github.com/beevik/etree to v1.5.0 (#68)
+
 ## v1.2.2 (Released 2024-06-10)
 
 IMPROVEMENTS
