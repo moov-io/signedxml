@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
+	"fmt"
 
 	"github.com/beevik/etree"
 )
@@ -149,7 +150,11 @@ func (s *Signer) setSignature() error {
 
 	switch signingAlgorithm.algorithm {
 	case "rsa":
-		signature, err = rsa.SignPKCS1v15(rand.Reader, s.privateKey.(*rsa.PrivateKey), signingAlgorithm.hash, hashed)
+		pk, ok := s.privateKey.(*rsa.PrivateKey)
+		if !ok {
+			return fmt.Errorf("unexpected %T (expected *rsa.PrivateKey)", s.privateKey)
+		}
+		signature, err = rsa.SignPKCS1v15(rand.Reader, pk, signingAlgorithm.hash, hashed)
 		/*
 			case "dsa":
 				h1, h2, err = dsa.Sign(rand.Reader, s.privateKey.(*dsa.PrivateKey), hashed)
