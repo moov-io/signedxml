@@ -117,7 +117,7 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 				}
 			}
 		}
-
+		refUri := ref.SelectAttrValue("URI", "")
 		doc, err = v.getReferencedXML(ref, doc)
 		if err != nil {
 			return nil, err
@@ -127,7 +127,7 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 
 		digestValueElement := ref.SelectElement("DigestValue")
 		if digestValueElement == nil {
-			return nil, errors.New("signedxml: unable to find DigestValue")
+			return nil, fmt.Errorf("signedxml [%s]: unable to find DigestValue", refUri)
 		}
 		digestValue := digestValueElement.Text()
 
@@ -137,8 +137,8 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 		}
 
 		if calculatedValue != digestValue {
-			return nil, fmt.Errorf("signedxml: Calculated digest does not match the"+
-				" expected digestvalue of %s", digestValue)
+			return nil, fmt.Errorf("signedxml [%s]: Calculated digest does not match the"+
+				" expected digestvalue of %s", refUri, digestValue)
 		}
 	}
 	return referenced, nil
