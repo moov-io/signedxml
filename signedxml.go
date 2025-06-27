@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/beevik/etree"
@@ -220,6 +221,38 @@ func (s *signatureData) parseCanonAlgorithm() error {
 		"CanonicalizationMethod")
 }
 
+func findNs(in *etree.Element, ns map[string]string) {
+	ns[in.Space] = in.NamespaceURI()
+	for _, c := range in.ChildElements() {
+		findNs(c, ns)
+	}
+}
+
+func findNamespaces(in *etree.Document) map[string]string {
+	var ns = make(map[string]string)
+	findNs(in.Root(), ns)
+	return ns
+}
+
+func fixNs(e *etree.Element, ns map[string]string) {
+	if e.NamespaceURI() == "" && e.Space != "" {
+		if uri, ok := ns[e.Space]; ok {
+			e.CreateAttr(fmt.Sprintf("xmlns:%s", e.Space), uri)
+		} else {
+			log.Printf("signedxml: Missing namespace tag %s\n", e.Space)
+		}
+	}
+
+	for _, c := range e.ChildElements() {
+		fixNs(c, ns)
+	}
+}
+
+func fixNamespaces(in *etree.Document, out *etree.Document) {
+	ns := findNamespaces(in)
+	fixNs(out.Root(), ns)
+}
+
 func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
 	uri := reference.SelectAttrValue("URI", "")
 	uri = strings.Replace(uri, "#", "", 1)
@@ -246,6 +279,8 @@ func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etr
 			}
 		}
 	}
+
+	fixNamespaces(inputDoc, outputDoc)
 
 	if outputDoc == nil {
 		return nil, errors.New("signedxml: unable to find refereced xml")
