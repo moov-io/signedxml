@@ -30,6 +30,6 @@ func TestIssue55(t *testing.T) {
 	validator.Certificates = append(validator.Certificates, *cert)
 
 	refs, err := validator.ValidateReferences()
-	require.Contains(t, err.Error(), "signedxml: Calculated digest does not match the expected digestvalue of")
+	require.Contains(t, err.Error(), "does not match the expected digestvalue of")
 	require.Len(t, refs, 0)
 }

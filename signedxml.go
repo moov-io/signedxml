@@ -280,11 +280,11 @@ func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etr
 		}
 	}
 
-	fixNamespaces(inputDoc, outputDoc)
-
 	if outputDoc == nil {
 		return nil, errors.New("signedxml: unable to find refereced xml")
 	}
+
+	fixNamespaces(inputDoc, outputDoc)
 
 	return outputDoc, nil
 }
@@ -305,38 +305,45 @@ func getCertFromPEMString(pemString string) (*x509.Certificate, error) {
 	return cert, err
 }
 
+const ALL_TRANSFORMS string = ""
+
 func processTransform(transform *etree.Element,
-	docIn *etree.Document) (docOut *etree.Document, err error) {
+	docIn *etree.Document, onlyIfContains string) (docOut *etree.Document, err error) {
 
 	transformAlgoURI := transform.SelectAttrValue("Algorithm", "")
 	if transformAlgoURI == "" {
 		return nil, errors.New("signedxml: unable to find Algorithm in Transform")
 	}
 
-	transformAlgo, ok := CanonicalizationAlgorithms[transformAlgoURI]
-	if !ok {
-		return nil, fmt.Errorf("signedxml: unable to find matching transform"+
-			"algorithm for %s in CanonicalizationAlgorithms", transformAlgoURI)
-	}
+	if onlyIfContains == "" || strings.Contains(transformAlgoURI, onlyIfContains) {
 
-	var transformContent string
+		transformAlgo, ok := CanonicalizationAlgorithms[transformAlgoURI]
+		if !ok {
+			return nil, fmt.Errorf("signedxml: unable to find matching transform"+
+				"algorithm for %s in CanonicalizationAlgorithms", transformAlgoURI)
+		}
 
-	if transform.ChildElements() != nil {
-		tDoc := etree.NewDocument()
-		tDoc.SetRoot(transform.Copy())
-		transformContent, err = tDoc.WriteToString()
+		var transformContent string
+
+		if transform.ChildElements() != nil {
+			tDoc := etree.NewDocument()
+			tDoc.SetRoot(transform.Copy())
+			transformContent, err = tDoc.WriteToString()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		docString, err := transformAlgo.ProcessDocument(docIn, transformContent)
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	docString, err := transformAlgo.ProcessDocument(docIn, transformContent)
-	if err != nil {
-		return nil, err
+		docOut = etree.NewDocument()
+		docOut.ReadFromString(docString)
+	} else {
+		docOut = docIn
 	}
-
-	docOut = etree.NewDocument()
-	docOut.ReadFromString(docString)
 
 	return docOut, nil
 }

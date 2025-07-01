@@ -108,16 +108,25 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 	for _, ref := range references {
 		doc := v.xml.Copy()
 
+		transforms := ref.SelectElement("Transforms")
+		if transforms != nil {
+			for _, transform := range transforms.SelectElements("Transform") {
+				doc, err = processTransform(transform, doc, ALL_TRANSFORMS)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
 		refUri := ref.SelectAttrValue("URI", "")
 		doc, err = v.getReferencedXML(ref, doc)
 		if err != nil {
 			return nil, err
 		}
 
-		transforms := ref.SelectElement("Transforms")
 		if transforms != nil {
 			for _, transform := range transforms.SelectElements("Transform") {
-				doc, err = processTransform(transform, doc)
+				doc, err = processTransform(transform, doc, "c14n")
 				if err != nil {
 					return nil, err
 				}
