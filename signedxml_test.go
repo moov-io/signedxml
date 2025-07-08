@@ -128,7 +128,9 @@ func TestSign(t *testing.T) {
 				So(len(refs), ShouldEqual, 1)
 			})
 			Convey("And the signature should be valid, but validation fail if referenceIDAttribute NOT SET", func() {
-				validator, _ := NewValidator(xmlStr)
+				validator, err := NewValidator(xmlStr)
+				So(err, ShouldBeNil)
+				So(validator, ShouldNotBeNil)
 				validator.Certificates = append(validator.Certificates, *cert)
 				refs, err := validator.ValidateReferences()
 				So(err, ShouldNotBeNil)
@@ -157,9 +159,12 @@ func TestSign(t *testing.T) {
 		signer, _ := NewSigner(string(xml))
 		signer.SetReferenceIDAttribute("Id")
 		xmlStr, err := signer.Sign(key)
+		t.Logf("%#v", xmlStr)
 		So(err, ShouldBeNil)
+		So(xmlStr, ShouldNotBeNil)
 
-		validator, _ := NewValidator(xmlStr)
+		validator, err := NewValidator(xmlStr)
+		So(err, ShouldBeNil)
 		validator.SetReferenceIDAttribute("Id")
 		validator.Certificates = append(validator.Certificates, *cert)
 		refs, err := validator.ValidateReferences()
@@ -249,7 +254,7 @@ func TestValidate(t *testing.T) {
 				refs, err := validator.ValidateReferences()
 				Convey("Then an error occurs", func() {
 					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldContainSubstring, "signedxml:")
+					So(err.Error(), ShouldContainSubstring, "signedxml")
 					t.Logf("%v  - %d", description, len(refs))
 					So(len(refs), ShouldEqual, 0)
 				})

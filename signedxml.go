@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/beevik/etree"
@@ -220,6 +221,38 @@ func (s *signatureData) parseCanonAlgorithm() error {
 		"CanonicalizationMethod")
 }
 
+func findNs(in *etree.Element, ns map[string]string) {
+	ns[in.Space] = in.NamespaceURI()
+	for _, c := range in.ChildElements() {
+		findNs(c, ns)
+	}
+}
+
+func findNamespaces(in *etree.Document) map[string]string {
+	var ns = make(map[string]string)
+	findNs(in.Root(), ns)
+	return ns
+}
+
+func fixNs(e *etree.Element, ns map[string]string) {
+	if e.NamespaceURI() == "" && e.Space != "" {
+		if uri, ok := ns[e.Space]; ok {
+			e.CreateAttr(fmt.Sprintf("xmlns:%s", e.Space), uri)
+		} else {
+			log.Printf("signedxml: Missing namespace tag %s\n", e.Space)
+		}
+	}
+
+	for _, c := range e.ChildElements() {
+		fixNs(c, ns)
+	}
+}
+
+func fixNamespaces(in *etree.Document, out *etree.Document) {
+	ns := findNamespaces(in)
+	fixNs(out.Root(), ns)
+}
+
 func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
 	uri := reference.SelectAttrValue("URI", "")
 	uri = strings.Replace(uri, "#", "", 1)
@@ -251,6 +284,8 @@ func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etr
 		return nil, errors.New("signedxml: unable to find refereced xml")
 	}
 
+	fixNamespaces(inputDoc, outputDoc)
+
 	return outputDoc, nil
 }
 
@@ -270,38 +305,45 @@ func getCertFromPEMString(pemString string) (*x509.Certificate, error) {
 	return cert, err
 }
 
+const ALL_TRANSFORMS string = ""
+
 func processTransform(transform *etree.Element,
-	docIn *etree.Document) (docOut *etree.Document, err error) {
+	docIn *etree.Document, onlyIfContains string) (docOut *etree.Document, err error) {
 
 	transformAlgoURI := transform.SelectAttrValue("Algorithm", "")
 	if transformAlgoURI == "" {
 		return nil, errors.New("signedxml: unable to find Algorithm in Transform")
 	}
 
-	transformAlgo, ok := CanonicalizationAlgorithms[transformAlgoURI]
-	if !ok {
-		return nil, fmt.Errorf("signedxml: unable to find matching transform"+
-			"algorithm for %s in CanonicalizationAlgorithms", transformAlgoURI)
-	}
+	if onlyIfContains == "" || strings.Contains(transformAlgoURI, onlyIfContains) {
 
-	var transformContent string
+		transformAlgo, ok := CanonicalizationAlgorithms[transformAlgoURI]
+		if !ok {
+			return nil, fmt.Errorf("signedxml: unable to find matching transform"+
+				"algorithm for %s in CanonicalizationAlgorithms", transformAlgoURI)
+		}
 
-	if transform.ChildElements() != nil {
-		tDoc := etree.NewDocument()
-		tDoc.SetRoot(transform.Copy())
-		transformContent, err = tDoc.WriteToString()
+		var transformContent string
+
+		if transform.ChildElements() != nil {
+			tDoc := etree.NewDocument()
+			tDoc.SetRoot(transform.Copy())
+			transformContent, err = tDoc.WriteToString()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		docString, err := transformAlgo.ProcessDocument(docIn, transformContent)
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	docString, err := transformAlgo.ProcessDocument(docIn, transformContent)
-	if err != nil {
-		return nil, err
+		docOut = etree.NewDocument()
+		docOut.ReadFromString(docString)
+	} else {
+		docOut = docIn
 	}
-
-	docOut = etree.NewDocument()
-	docOut.ReadFromString(docString)
 
 	return docOut, nil
 }

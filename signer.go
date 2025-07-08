@@ -105,7 +105,7 @@ func (s *Signer) setDigest() (err error) {
 		transforms := ref.SelectElement("Transforms")
 		if transforms != nil {
 			for _, transform := range transforms.SelectElements("Transform") {
-				doc, err = processTransform(transform, doc)
+				doc, err = processTransform(transform, doc, ALL_TRANSFORMS)
 				if err != nil {
 					return err
 				}

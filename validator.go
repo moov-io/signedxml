@@ -111,34 +111,43 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 		transforms := ref.SelectElement("Transforms")
 		if transforms != nil {
 			for _, transform := range transforms.SelectElements("Transform") {
-				doc, err = processTransform(transform, doc)
+				doc, err = processTransform(transform, doc, ALL_TRANSFORMS)
 				if err != nil {
 					return nil, err
 				}
 			}
 		}
 
+		refUri := ref.SelectAttrValue("URI", "")
 		doc, err = v.getReferencedXML(ref, doc)
 		if err != nil {
 			return nil, err
+		}
+
+		if transforms != nil {
+			for _, transform := range transforms.SelectElements("Transform") {
+				doc, err = processTransform(transform, doc, "c14n")
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 
 		referenced = append(referenced, doc)
 
 		digestValueElement := ref.SelectElement("DigestValue")
 		if digestValueElement == nil {
-			return nil, errors.New("signedxml: unable to find DigestValue")
+			return nil, fmt.Errorf("signedxml [%s]: unable to find DigestValue", refUri)
 		}
 		digestValue := digestValueElement.Text()
-
 		calculatedValue, err := calculateHash(ref, doc)
 		if err != nil {
 			return nil, err
 		}
 
 		if calculatedValue != digestValue {
-			return nil, fmt.Errorf("signedxml: Calculated digest does not match the"+
-				" expected digestvalue of %s", digestValue)
+			return nil, fmt.Errorf("signedxml [%s]: Calculated digest (%s) does not match the"+
+				" expected digestvalue of %s", refUri, calculatedValue, digestValue)
 		}
 	}
 	return referenced, nil
