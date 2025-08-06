@@ -2,7 +2,7 @@ module github.com/leifj/signedxml
 
 go 1.21.0
 
-toolchain go1.24.5
+toolchain go1.24.6
 
 require (
 	github.com/beevik/etree v1.5.1
