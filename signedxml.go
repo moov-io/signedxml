@@ -108,6 +108,7 @@ type signatureData struct {
 // that Validator will verify
 func (s *signatureData) SetSignature(sig string) error {
 	doc := etree.NewDocument()
+	doc.ReadSettings.PreserveCData = true
 	err := doc.ReadFromString(sig)
 	s.signature = doc.Root()
 	return err
@@ -340,6 +341,7 @@ func processTransform(transform *etree.Element,
 		}
 
 		docOut = etree.NewDocument()
+		docOut.ReadSettings.PreserveCData = true
 		docOut.ReadFromString(docString)
 	} else {
 		docOut = docIn
@@ -402,11 +404,11 @@ func removeXMLDeclaration(doc *etree.Document) {
 // parseXML parses an XML string into an etree.Document and removes the XML declaration if present.
 func parseXML(xml string) (*etree.Document, error) {
 	doc := etree.NewDocument()
+	doc.ReadSettings.PreserveCData = true
 	if err := doc.ReadFromString(xml); err != nil {
 		return nil, err
 	}
 
-	doc.ReadSettings.PreserveCData = true
 	removeXMLDeclaration(doc)
 
 	return doc, nil

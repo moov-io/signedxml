@@ -35,6 +35,7 @@ func (v *Validator) SetReferenceIDAttribute(refIDAttribute string) {
 // SetXML is used to assign the XML document that the Validator will verify
 func (v *Validator) SetXML(xml string) error {
 	doc := etree.NewDocument()
+	doc.ReadSettings.PreserveCData = true
 	err := doc.ReadFromString(xml)
 	v.xml = doc
 	return err
