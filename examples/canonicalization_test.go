@@ -3,7 +3,7 @@ package examples
 import (
 	"testing"
 
-	"github.com/leifj/signedxml"
+	"github.com/moov-io/signedxml"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
