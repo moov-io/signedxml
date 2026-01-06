@@ -66,6 +66,7 @@ func (e ExclusiveCanonicalization) ProcessDocument(doc *etree.Document,
 // see CanonicalizationAlgorithm.Process
 func (e ExclusiveCanonicalization) Process(inputXML string, transformXML string) (outputXML string, err error) {
 	doc := etree.NewDocument()
+	doc.ReadSettings.PreserveCData = true
 	err = doc.ReadFromString(inputXML)
 	if err != nil {
 		return "", err
@@ -91,6 +92,7 @@ func (e ExclusiveCanonicalization) processDocument(doc *etree.Document, transfor
 func (e *ExclusiveCanonicalization) loadPrefixList(transformXML string) {
 	if transformXML != "" {
 		tDoc := etree.NewDocument()
+		tDoc.ReadSettings.PreserveCData = true
 		tDoc.ReadFromString(transformXML)
 		inclNSNode := tDoc.Root().SelectElement("InclusiveNamespaces")
 		if inclNSNode != nil {
@@ -172,6 +174,14 @@ func (e ExclusiveCanonicalization) processRecursive(node *etree.Element,
 			if !e.WithComments {
 				removeTokenFromElement(etree.Token(child), node)
 				i--
+			}
+		case *etree.CharData:
+			// Convert CDATA sections to regular text nodes for canonicalization
+			// CDATA sections must be converted to escaped text per XML canonicalization rules
+			if child.IsCData() {
+				// Replace CDATA with regular text node containing the same data
+				textNode := etree.NewText(child.Data)
+				node.Child[i] = textNode
 			}
 		case *etree.Element:
 			e.processRecursive(child, newPrefixesInScope, newDefaultNS)

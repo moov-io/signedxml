@@ -50,6 +50,7 @@ func (e EnvelopedSignature) ProcessDocument(doc *etree.Document,
 // see CanonicalizationAlgorithm.Process
 func (e EnvelopedSignature) Process(inputXML string, transformXML string) (outputXML string, err error) {
 	doc := etree.NewDocument()
+	doc.ReadSettings.PreserveCData = true
 	err = doc.ReadFromString(inputXML)
 	if err != nil {
 		return "", err

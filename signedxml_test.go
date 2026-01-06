@@ -171,6 +171,36 @@ func TestSign(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(len(refs), ShouldEqual, 1)
 	})
+
+	Convey("Given an XML with nested XML in CDATA section, certificate, and RSA key", t, func() {
+		xml, _ := os.ReadFile("./testdata/nosignature-cdata.xml")
+
+		Convey("When generating the signature", func() {
+			signer, _ := NewSigner(string(xml))
+			xmlStr, err := signer.Sign(key)
+			Convey("Then no error occurs", func() {
+				So(err, ShouldBeNil)
+			})
+			Convey("And the signature should be valid", func() {
+				validator, _ := NewValidator(xmlStr)
+				validator.Certificates = append(validator.Certificates, *cert)
+				refs, err := validator.ValidateReferences()
+				So(err, ShouldBeNil)
+				So(len(refs), ShouldEqual, 1)
+			})
+			Convey("And the CDATA section should be preserved in the signed document", func() {
+				doc := etree.NewDocument()
+				err := doc.ReadFromString(xmlStr)
+				So(err, ShouldBeNil)
+				nestedData := doc.FindElement("//NestedData")
+				So(nestedData, ShouldNotBeNil)
+				// Check that CDATA content is preserved
+				text := nestedData.Text()
+				So(text, ShouldContainSubstring, "<nested>")
+				So(text, ShouldContainSubstring, "<item id=\"1\">First Item</item>")
+			})
+		})
+	})
 }
 
 func TestValidate(t *testing.T) {

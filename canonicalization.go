@@ -28,6 +28,7 @@ func (c *c14N10RecCanonicalizer) ProcessDocument(doc *etree.Document, transformX
 
 func (c c14N10RecCanonicalizer) Process(inputXML string, transformXML string) (outputXML string, err error) {
 	doc := etree.NewDocument()
+	doc.ReadSettings.PreserveCData = true
 	err = doc.ReadFromString(inputXML)
 	if err != nil {
 		return "", err
@@ -73,6 +74,7 @@ func (c *c14N11Canonicalizer) ProcessDocument(doc *etree.Document, transformXML 
 
 func (c c14N11Canonicalizer) Process(inputXML string, transformXML string) (outputXML string, err error) {
 	doc := etree.NewDocument()
+	doc.ReadSettings.PreserveCData = true
 	err = doc.ReadFromString(inputXML)
 	if err != nil {
 		return "", err
