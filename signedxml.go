@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/beevik/etree"
@@ -134,16 +133,20 @@ func (s *signatureData) parseSignedInfo() error {
 	}
 
 	// move the Signature level namespace down to SignedInfo so that the signature
-	// value will match up
+	// value will match up, while preserving existing attributes
 	if s.signedInfo.Space != "" {
 		attr := s.signature.SelectAttr(s.signedInfo.Space)
 		if attr != nil {
-			s.signedInfo.Attr = []etree.Attr{*attr}
+			// Prepend the namespace attribute while keeping existing attributes
+			existingAttrs := s.signedInfo.Attr
+			s.signedInfo.Attr = append([]etree.Attr{*attr}, existingAttrs...)
 		}
 	} else {
 		attr := s.signature.SelectAttr("xmlns")
 		if attr != nil {
-			s.signedInfo.Attr = []etree.Attr{*attr}
+			// Prepend the namespace attribute while keeping existing attributes
+			existingAttrs := s.signedInfo.Attr
+			s.signedInfo.Attr = append([]etree.Attr{*attr}, existingAttrs...)
 		}
 	}
 
@@ -222,38 +225,6 @@ func (s *signatureData) parseCanonAlgorithm() error {
 		"CanonicalizationMethod")
 }
 
-func findNs(in *etree.Element, ns map[string]string) {
-	ns[in.Space] = in.NamespaceURI()
-	for _, c := range in.ChildElements() {
-		findNs(c, ns)
-	}
-}
-
-func findNamespaces(in *etree.Document) map[string]string {
-	var ns = make(map[string]string)
-	findNs(in.Root(), ns)
-	return ns
-}
-
-func fixNs(e *etree.Element, ns map[string]string) {
-	if e.NamespaceURI() == "" && e.Space != "" {
-		if uri, ok := ns[e.Space]; ok {
-			e.CreateAttr(fmt.Sprintf("xmlns:%s", e.Space), uri)
-		} else {
-			log.Printf("signedxml: Missing namespace tag %s\n", e.Space)
-		}
-	}
-
-	for _, c := range e.ChildElements() {
-		fixNs(c, ns)
-	}
-}
-
-func fixNamespaces(in *etree.Document, out *etree.Document) {
-	ns := findNamespaces(in)
-	fixNs(out.Root(), ns)
-}
-
 func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {
 	uri := reference.SelectAttrValue("URI", "")
 	uri = strings.Replace(uri, "#", "", 1)
@@ -285,20 +256,50 @@ func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etr
 		return nil, errors.New("signedxml: unable to find refereced xml")
 	}
 
-	fixNamespaces(inputDoc, outputDoc)
-
 	return outputDoc, nil
 }
 
+// findReferencedElement finds the element referenced by the URI attribute,
+// returning it in its original context (not copied). This is needed for
+// proper C14N canonicalization which requires the element's namespace context.
+func (s *signatureData) findReferencedElement(reference *etree.Element, inputDoc *etree.Document) (*etree.Element, error) {
+	uri := reference.SelectAttrValue("URI", "")
+	uri = strings.Replace(uri, "#", "", 1)
+
+	if uri == "" {
+		return inputDoc.Root(), nil
+	}
+
+	refIDAttribute := "ID"
+	if s.refIDAttribute != "" {
+		refIDAttribute = s.refIDAttribute
+	}
+	path := fmt.Sprintf(".//[@%s='%s']", refIDAttribute, uri)
+	e := inputDoc.FindElement(path)
+	if e != nil {
+		return e, nil
+	}
+
+	// SAML v1.1 Assertions use AssertionID
+	path = fmt.Sprintf(".//[@AssertionID='%s']", uri)
+	e = inputDoc.FindElement(path)
+	if e != nil {
+		return e, nil
+	}
+
+	return nil, errors.New("signedxml: unable to find referenced xml element")
+}
+
 func getCertFromPEMString(pemString string) (*x509.Certificate, error) {
-	pubkey := fmt.Sprintf("-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----",
+	// The X509Certificate element contains base64-encoded DER certificate data
+	certPEM := fmt.Sprintf("-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----",
 		pemString)
 
-	pemBlock, _ := pem.Decode([]byte(pubkey))
+	pemBlock, _ := pem.Decode([]byte(certPEM))
 	if pemBlock == nil {
-		return &x509.Certificate{}, errors.New("Could not parse Public Key PEM")
+		return &x509.Certificate{}, errors.New("Could not parse Certificate PEM")
 	}
-	if pemBlock.Type != "PUBLIC KEY" {
+	if pemBlock.Type != "CERTIFICATE" {
 		return &x509.Certificate{}, errors.New("Found wrong key type")
 	}
 
@@ -367,17 +368,120 @@ func calculateHash(reference *etree.Element, doc *etree.Document) (string, error
 			"algorithm for %s in hashAlgorithms", digestMethodURI)
 	}
 
+	// Use proper C14N canonicalization for the digest calculation.
+	// This is essential for XAdES signatures and any case where the referenced
+	// XML needs proper namespace handling.
+	canon := dsig.MakeC14N10RecCanonicalizer()
+	docBytes, err := canon.Canonicalize(doc.Root())
+	if err != nil {
+		return "", fmt.Errorf("signedxml: canonicalization failed: %w", err)
+	}
+
+	h := digestAlgo.New()
+	h.Write(docBytes)
+	d := h.Sum(nil)
+	calculatedValue := base64.StdEncoding.EncodeToString(d)
+
+	return calculatedValue, nil
+}
+
+// calculateHashFromString calculates the digest of an already-canonicalized XML string.
+// This is used when c14n transforms have been applied and produced a canonical string.
+func calculateHashFromString(reference *etree.Element, xmlString string) (string, error) {
+	digestMethodElement := reference.SelectElement("DigestMethod")
+	if digestMethodElement == nil {
+		return "", errors.New("signedxml: unable to find DigestMethod")
+	}
+
+	digestMethodURI := digestMethodElement.SelectAttrValue("Algorithm", "")
+	if digestMethodURI == "" {
+		return "", errors.New("signedxml: unable to find Algorithm in DigestMethod")
+	}
+
+	digestAlgo, ok := hashAlgorithms[digestMethodURI]
+	if !ok {
+		return "", fmt.Errorf("signedxml: unable to find matching hash"+
+			"algorithm for %s in hashAlgorithms", digestMethodURI)
+	}
+
+	h := digestAlgo.New()
+	h.Write([]byte(xmlString))
+	d := h.Sum(nil)
+	calculatedValue := base64.StdEncoding.EncodeToString(d)
+
+	return calculatedValue, nil
+}
+
+// calculateHashRaw calculates the digest of a document without applying any
+// canonicalization. This is used when transforms have already been applied
+// (including any c14n transforms) and the document contains the canonical form.
+func calculateHashRaw(reference *etree.Element, doc *etree.Document) (string, error) {
+	digestMethodElement := reference.SelectElement("DigestMethod")
+	if digestMethodElement == nil {
+		return "", errors.New("signedxml: unable to find DigestMethod")
+	}
+
+	digestMethodURI := digestMethodElement.SelectAttrValue("Algorithm", "")
+	if digestMethodURI == "" {
+		return "", errors.New("signedxml: unable to find Algorithm in DigestMethod")
+	}
+
+	digestAlgo, ok := hashAlgorithms[digestMethodURI]
+	if !ok {
+		return "", fmt.Errorf("signedxml: unable to find matching hash"+
+			"algorithm for %s in hashAlgorithms", digestMethodURI)
+	}
+
+	// Serialize the document as-is. The transforms have already produced
+	// the canonical form, so we just need to hash it.
 	doc.WriteSettings.CanonicalEndTags = true
 	doc.WriteSettings.CanonicalText = true
 	doc.WriteSettings.CanonicalAttrVal = true
 
-	h := digestAlgo.New()
 	docBytes, err := doc.WriteToBytes()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("signedxml: serialization failed: %w", err)
 	}
 
+	h := digestAlgo.New()
 	h.Write(docBytes)
+	d := h.Sum(nil)
+	calculatedValue := base64.StdEncoding.EncodeToString(d)
+
+	return calculatedValue, nil
+}
+
+// calculateHashFromElement calculates the digest of an element while it remains
+// in its original document context. This preserves the element's namespace context
+// which is essential for proper C14N canonicalization with inherited namespaces.
+func calculateHashFromElement(reference *etree.Element, element *etree.Element) (string, error) {
+	digestMethodElement := reference.SelectElement("DigestMethod")
+	if digestMethodElement == nil {
+		return "", errors.New("signedxml: unable to find DigestMethod")
+	}
+
+	digestMethodURI := digestMethodElement.SelectAttrValue("Algorithm", "")
+	if digestMethodURI == "" {
+		return "", errors.New("signedxml: unable to find Algorithm in DigestMethod")
+	}
+
+	digestAlgo, ok := hashAlgorithms[digestMethodURI]
+	if !ok {
+		return "", fmt.Errorf("signedxml: unable to find matching hash"+
+			"algorithm for %s in hashAlgorithms", digestMethodURI)
+	}
+
+	// Use proper C14N canonicalization for the digest calculation.
+	// The element is still in its original context, so the canonicalizer
+	// can properly resolve inherited namespace declarations.
+	canon := dsig.MakeC14N10RecCanonicalizer()
+	elementBytes, err := canon.Canonicalize(element)
+	if err != nil {
+		return "", fmt.Errorf("signedxml: canonicalization failed: %w", err)
+	}
+
+	h := digestAlgo.New()
+	h.Write(elementBytes)
 	d := h.Sum(nil)
 	calculatedValue := base64.StdEncoding.EncodeToString(d)
 
