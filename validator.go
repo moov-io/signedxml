@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/beevik/etree"
 )
@@ -110,46 +111,120 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 		doc := v.xml.Copy()
 
 		transforms := ref.SelectElement("Transforms")
-		if transforms != nil {
-			for _, transform := range transforms.SelectElements("Transform") {
-				doc, err = processTransform(transform, doc, ALL_TRANSFORMS)
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
 
 		refUri := ref.SelectAttrValue("URI", "")
-		doc, err = v.getReferencedXML(ref, doc)
-		if err != nil {
-			return nil, err
-		}
 
-		if transforms != nil {
+		// For references WITHOUT transforms (like XAdES SignedProperties),
+		// we need to calculate the hash while the element is still in its
+		// original namespace context. This is crucial for proper C14N
+		// canonicalization with inherited namespaces.
+		//
+		// For references WITH transforms, we apply the transforms first
+		// and then calculate the hash on the modified document.
+		var calculatedValue string
+
+		if transforms == nil || len(transforms.SelectElements("Transform")) == 0 {
+			// No transforms - calculate hash with element in original context
+			refElement, findErr := v.findReferencedElement(ref, doc)
+			if findErr != nil {
+				return nil, findErr
+			}
+			calculatedValue, err = calculateHashFromElement(ref, refElement)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			// Has transforms - process them in the correct order.
+			// Non-c14n transforms (like enveloped-signature) operate on the full document.
+			// C14n transforms operate on the referenced element IN ITS ORIGINAL CONTEXT
+			// to properly handle inherited namespace declarations.
+
+			// First pass: apply non-c14n transforms to the full document
 			for _, transform := range transforms.SelectElements("Transform") {
-				doc, err = processTransform(transform, doc, "c14n")
+				transformAlgoURI := transform.SelectAttrValue("Algorithm", "")
+				if !strings.Contains(transformAlgoURI, "c14n") {
+					doc, err = processTransform(transform, doc, ALL_TRANSFORMS)
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+
+			// Find the referenced element (keep it in context for c14n)
+			refElement, findErr := v.findReferencedElement(ref, doc)
+			if findErr != nil {
+				return nil, findErr
+			}
+
+			// Apply c14n transforms to the element IN ITS CONTEXT
+			// This properly handles inherited namespace declarations.
+			var canonicalXML string
+			hasCanonicalization := false
+			for _, transform := range transforms.SelectElements("Transform") {
+				transformAlgoURI := transform.SelectAttrValue("Algorithm", "")
+				if strings.Contains(transformAlgoURI, "c14n") {
+					hasCanonicalization = true
+					canonAlgo, ok := CanonicalizationAlgorithms[transformAlgoURI]
+					if !ok {
+						return nil, fmt.Errorf("signedxml: unsupported c14n algorithm: %s", transformAlgoURI)
+					}
+
+					// Get transform content (e.g., InclusiveNamespaces)
+					var transformContent string
+					if transform.ChildElements() != nil {
+						tDoc := etree.NewDocument()
+						tDoc.SetRoot(transform.Copy())
+						transformContent, _ = tDoc.WriteToString()
+					}
+
+					canonicalXML, err = canonAlgo.ProcessElement(refElement, transformContent)
+					if err != nil {
+						return nil, err
+					}
+					// Only apply the first c14n transform (there should only be one)
+					break
+				}
+			}
+
+			if hasCanonicalization {
+				// Hash the canonical XML string directly
+				calculatedValue, err = calculateHashFromString(ref, canonicalXML)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				// No explicit c14n transform in Reference - use the old approach:
+				// extract element to a new document and hash it. This is needed because
+				// without a c14n transform, the element should NOT include inherited
+				// namespace declarations from its parent.
+				extractedDoc, err := v.getReferencedXML(ref, doc)
+				if err != nil {
+					return nil, err
+				}
+				calculatedValue, err = calculateHash(ref, extractedDoc)
 				if err != nil {
 					return nil, err
 				}
 			}
 		}
-
-		referenced = append(referenced, doc)
 
 		digestValueElement := ref.SelectElement("DigestValue")
 		if digestValueElement == nil {
 			return nil, fmt.Errorf("signedxml [%s]: unable to find DigestValue", refUri)
 		}
 		digestValue := digestValueElement.Text()
-		calculatedValue, err := calculateHash(ref, doc)
-		if err != nil {
-			return nil, err
-		}
 
 		if calculatedValue != digestValue {
 			return nil, fmt.Errorf("signedxml [%s]: Calculated digest (%s) does not match the"+
 				" expected digestvalue of %s", refUri, calculatedValue, digestValue)
 		}
+
+		// Extract the element for return
+		doc, err = v.getReferencedXML(ref, doc)
+		if err != nil {
+			return nil, err
+		}
+		referenced = append(referenced, doc)
 	}
 	return referenced, nil
 }

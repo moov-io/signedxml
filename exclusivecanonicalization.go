@@ -49,11 +49,47 @@ type ExclusiveCanonicalization struct {
 	namespaces                   map[string]string
 }
 
+// collectAncestorNamespaces walks up the element tree and collects all namespace
+// declarations from ancestors. This is needed because when we copy an element,
+// we lose the namespace context from its ancestors.
+func collectAncestorNamespaces(elem *etree.Element) map[string]string {
+	namespaces := make(map[string]string)
+
+	// Walk up the tree collecting namespace declarations
+	for current := elem.Parent(); current != nil; {
+		for _, attr := range current.Attr {
+			// xmlns:prefix="uri" declarations
+			if attr.Space == "xmlns" {
+				if _, exists := namespaces[attr.Key]; !exists {
+					namespaces[attr.Key] = attr.Value
+				}
+			}
+			// xmlns="uri" default namespace declaration
+			if attr.Space == "" && attr.Key == "xmlns" {
+				if _, exists := namespaces[""]; !exists {
+					namespaces[""] = attr.Value
+				}
+			}
+		}
+		current = current.Parent()
+	}
+
+	return namespaces
+}
+
 // see CanonicalizationAlgorithm.ProcessElement
 func (e ExclusiveCanonicalization) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
+	// Collect namespace declarations from ancestors before copying
+	ancestorNamespaces := collectAncestorNamespaces(inputXML)
+
+	// Create a copy and pre-populate the namespace map with ancestor namespaces
 	doc := etree.NewDocument()
 	doc.SetRoot(inputXML.Copy())
-	return e.processDocument(doc, transformXML)
+
+	// Store ancestor namespaces so processDocument can use them
+	e.namespaces = ancestorNamespaces
+
+	return e.processDocumentWithAncestorNS(doc, transformXML, ancestorNamespaces)
 }
 
 // see CanonicalizationAlgorithm.ProcessDocument
@@ -76,6 +112,28 @@ func (e ExclusiveCanonicalization) Process(inputXML string, transformXML string)
 
 func (e ExclusiveCanonicalization) processDocument(doc *etree.Document, transformXML string) (outputXML string, err error) {
 	e.namespaces = make(map[string]string)
+
+	doc.WriteSettings.CanonicalEndTags = true
+	doc.WriteSettings.CanonicalText = true
+	doc.WriteSettings.CanonicalAttrVal = true
+
+	e.loadPrefixList(transformXML)
+	e.processDocLevelNodes(doc)
+	e.processRecursive(doc.Root(), nil, "")
+
+	outputXML, err = doc.WriteToString()
+	return outputXML, err
+}
+
+// processDocumentWithAncestorNS is like processDocument but pre-populates the
+// namespace map with declarations from ancestor elements. This is needed when
+// processing an element that was extracted from its original context.
+func (e ExclusiveCanonicalization) processDocumentWithAncestorNS(doc *etree.Document, transformXML string, ancestorNS map[string]string) (outputXML string, err error) {
+	// Initialize with ancestor namespaces
+	e.namespaces = make(map[string]string)
+	for k, v := range ancestorNS {
+		e.namespaces[k] = v
+	}
 
 	doc.WriteSettings.CanonicalEndTags = true
 	doc.WriteSettings.CanonicalText = true
