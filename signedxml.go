@@ -38,6 +38,10 @@ func init() {
 		"http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256": x509.ECDSAWithSHA256,
 		"http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384": x509.ECDSAWithSHA384,
 		"http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512": x509.ECDSAWithSHA512,
+		// RSA-PSS (RSASSA-PSS) algorithms - RFC 6931 Section 2.3.10
+		"http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1": x509.SHA256WithRSAPSS,
+		"http://www.w3.org/2007/05/xmldsig-more#sha384-rsa-MGF1": x509.SHA384WithRSAPSS,
+		"http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1": x509.SHA512WithRSAPSS,
 	}
 
 	CanonicalizationAlgorithms = map[string]CanonicalizationAlgorithm{

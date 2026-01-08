@@ -1,7 +1,10 @@
 package signedxml
 
 import (
+	"crypto"
+	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/base64"
 	"errors"
@@ -12,6 +15,66 @@ import (
 
 	"github.com/beevik/etree"
 )
+
+// OID for RSA-PSS: 1.2.840.113549.1.1.10
+var oidRSASSAPSS = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 10}
+
+// rsaPSSPublicKeyInfo is used for parsing RSA-PSS public key from certificate
+type rsaPSSPublicKeyInfo struct {
+	Algorithm pkix.AlgorithmIdentifier
+	PublicKey asn1.BitString
+}
+
+// rsaPublicKeyASN1 is used for parsing the RSA public key structure
+type rsaPublicKeyASN1 struct {
+	N *big.Int
+	E int
+}
+
+// tbsCertificateForPSS is used for parsing certificates with RSA-PSS keys
+type tbsCertificateForPSS struct {
+	Raw                asn1.RawContent
+	Version            int `asn1:"optional,explicit,default:0,tag:0"`
+	SerialNumber       asn1.RawValue
+	SignatureAlgorithm pkix.AlgorithmIdentifier
+	Issuer             asn1.RawValue
+	Validity           asn1.RawValue
+	Subject            asn1.RawValue
+	PublicKey          rsaPSSPublicKeyInfo
+}
+
+// certificateForPSS is used for parsing certificates with RSA-PSS keys
+type certificateForPSS struct {
+	Raw            asn1.RawContent
+	TBSCertificate tbsCertificateForPSS
+}
+
+// extractRSAPSSPublicKey extracts the RSA public key from a certificate that uses
+// RSA-PSS OID for its public key. Go's x509 library doesn't support this natively.
+func extractRSAPSSPublicKey(certDer []byte) (*rsa.PublicKey, error) {
+	var cert certificateForPSS
+	_, err := asn1.Unmarshal(certDer, &cert)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse certificate: %w", err)
+	}
+
+	// Check if this is RSA-PSS
+	if !cert.TBSCertificate.PublicKey.Algorithm.Algorithm.Equal(oidRSASSAPSS) {
+		return nil, fmt.Errorf("not an RSA-PSS public key")
+	}
+
+	// Parse the RSA public key from the bit string
+	var rsaPub rsaPublicKeyASN1
+	_, err = asn1.Unmarshal(cert.TBSCertificate.PublicKey.PublicKey.Bytes, &rsaPub)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse RSA public key: %w", err)
+	}
+
+	return &rsa.PublicKey{
+		N: rsaPub.N,
+		E: rsaPub.E,
+	}, nil
+}
 
 // Validator provides options for verifying a signed XML document
 type Validator struct {
@@ -264,6 +327,15 @@ func (v *Validator) validateSignature() error {
 			v.signingCert = cert
 			return nil
 		}
+		// If standard verification failed with "algorithm unimplemented" and we're using
+		// RSA-PSS, try manual verification - this handles certificates with RSA-PSS public keys
+		if cert.PublicKey == nil && isRSAPSSAlgorithm(v.sigAlgorithm) {
+			verifyErr := v.verifyRSAPSSSignature(cert.Raw, []byte(canonSignedInfo), sig)
+			if verifyErr == nil {
+				v.signingCert = cert
+				return nil
+			}
+		}
 	}
 
 	return errors.New("signedxml: Calculated signature does not match the " +
@@ -313,6 +385,44 @@ func convertECDSARawToASN1(alg x509.SignatureAlgorithm, raw []byte) ([]byte, err
 	return asn1.Marshal(struct {
 		R, S *big.Int
 	}{r, s})
+}
+
+// isRSAPSSAlgorithm returns true if the algorithm is RSA-PSS
+func isRSAPSSAlgorithm(alg x509.SignatureAlgorithm) bool {
+	return alg == x509.SHA256WithRSAPSS || alg == x509.SHA384WithRSAPSS || alg == x509.SHA512WithRSAPSS
+}
+
+// verifyRSAPSSSignature manually verifies an RSA-PSS signature for certificates
+// with RSA-PSS public keys that Go's x509 library can't handle
+func (v *Validator) verifyRSAPSSSignature(certDer, data, sig []byte) error {
+	rsaPub, err := extractRSAPSSPublicKey(certDer)
+	if err != nil {
+		return err
+	}
+
+	var hash crypto.Hash
+	switch v.sigAlgorithm {
+	case x509.SHA256WithRSAPSS:
+		hash = crypto.SHA256
+	case x509.SHA384WithRSAPSS:
+		hash = crypto.SHA384
+	case x509.SHA512WithRSAPSS:
+		hash = crypto.SHA512
+	default:
+		return fmt.Errorf("unsupported RSA-PSS algorithm: %v", v.sigAlgorithm)
+	}
+
+	h := hash.New()
+	h.Write(data)
+	hashed := h.Sum(nil)
+
+	// Use PSSSaltLengthAuto for maximum compatibility
+	opts := &rsa.PSSOptions{
+		SaltLength: rsa.PSSSaltLengthAuto,
+		Hash:       hash,
+	}
+
+	return rsa.VerifyPSS(rsaPub, hash, hashed, sig, opts)
 }
 
 func (v *Validator) loadCertificates() error {
