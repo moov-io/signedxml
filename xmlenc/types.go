@@ -556,6 +556,40 @@ func parseAgreementMethod(elem *etree.Element) *AgreementMethod {
 		am.KeyDerivationMethod = parseKeyDerivationMethod(kdmElem)
 	}
 
+	// Parse OriginatorKeyInfo (which contains KeyValue/ECKeyValue)
+	if okiElem := elem.FindElement("./OriginatorKeyInfo"); okiElem != nil {
+		am.OriginatorKeyInfo = &KeyInfo{}
+		// Parse KeyValue with ECKeyValue
+		if kvElem := okiElem.FindElement("./KeyValue"); kvElem != nil {
+			am.OriginatorKeyInfo.KeyValue = &KeyValue{}
+			if eckElem := kvElem.FindElement("./ECKeyValue"); eckElem != nil {
+				am.OriginatorKeyInfo.KeyValue.ECKeyValue = &ECKeyValue{
+					NamedCurve: eckElem.SelectAttrValue("NamedCurve", ""),
+				}
+				// Parse public key (dsig11:PublicKey)
+				if pkElem := eckElem.FindElement("./PublicKey"); pkElem != nil {
+					am.OriginatorKeyInfo.KeyValue.ECKeyValue.PublicKey, _ = base64.StdEncoding.DecodeString(pkElem.Text())
+				}
+			}
+		}
+	}
+
+	// Parse RecipientKeyInfo (similar structure)
+	if rkiElem := elem.FindElement("./RecipientKeyInfo"); rkiElem != nil {
+		am.RecipientKeyInfo = &KeyInfo{}
+		if kvElem := rkiElem.FindElement("./KeyValue"); kvElem != nil {
+			am.RecipientKeyInfo.KeyValue = &KeyValue{}
+			if eckElem := kvElem.FindElement("./ECKeyValue"); eckElem != nil {
+				am.RecipientKeyInfo.KeyValue.ECKeyValue = &ECKeyValue{
+					NamedCurve: eckElem.SelectAttrValue("NamedCurve", ""),
+				}
+				if pkElem := eckElem.FindElement("./PublicKey"); pkElem != nil {
+					am.RecipientKeyInfo.KeyValue.ECKeyValue.PublicKey, _ = base64.StdEncoding.DecodeString(pkElem.Text())
+				}
+			}
+		}
+	}
+
 	return am
 }
 
