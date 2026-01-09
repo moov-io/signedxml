@@ -172,11 +172,18 @@ func (v *Validator) loadValuesFromXML() error {
 func (v *Validator) validateReferences() (referenced []*etree.Document, err error) {
 	references := v.signedInfo.FindElements("./Reference")
 	for _, ref := range references {
+		refUri := ref.SelectAttrValue("URI", "")
+
+		// Skip external references like cid: URIs (used for MIME attachments in WS-Security).
+		// These have pre-computed digests and use transforms we don't implement.
+		// Callers should verify attachment digests separately.
+		if strings.HasPrefix(refUri, "cid:") {
+			continue
+		}
+
 		doc := v.xml.Copy()
 
 		transforms := ref.SelectElement("Transforms")
-
-		refUri := ref.SelectAttrValue("URI", "")
 
 		// For references WITHOUT transforms (like XAdES SignedProperties),
 		// we need to calculate the hash while the element is still in its

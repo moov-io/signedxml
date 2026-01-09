@@ -42,6 +42,8 @@ func init() {
 		"http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1": x509.SHA256WithRSAPSS,
 		"http://www.w3.org/2007/05/xmldsig-more#sha384-rsa-MGF1": x509.SHA384WithRSAPSS,
 		"http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1": x509.SHA512WithRSAPSS,
+		// Ed25519 (EdDSA) algorithms - RFC 9231 Section 2.3.1, eDelivery AS4 2.0
+		"http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519": x509.PureEd25519,
 	}
 
 	CanonicalizationAlgorithms = map[string]CanonicalizationAlgorithm{

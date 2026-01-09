@@ -2,12 +2,14 @@ package signedxml
 
 import (
 	"crypto"
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/beevik/etree"
 )
@@ -27,6 +29,9 @@ func init() {
 		x509.SHA256WithRSAPSS: {algorithm: "rsa-pss", hash: crypto.SHA256},
 		x509.SHA384WithRSAPSS: {algorithm: "rsa-pss", hash: crypto.SHA384},
 		x509.SHA512WithRSAPSS: {algorithm: "rsa-pss", hash: crypto.SHA512},
+		// Ed25519 (EdDSA) - RFC 9231, eDelivery AS4 2.0
+		// Ed25519 is "pure" - it signs data directly without pre-hashing
+		x509.PureEd25519: {algorithm: "ed25519", hash: 0},
 		// DSA not supported
 		// x509.DSAWithSHA1:  cryptoHash{algorithm: "dsa", hash: crypto.SHA1},
 		// x509.DSAWithSHA256:cryptoHash{algorithm: "dsa", hash: crypto.SHA256},
@@ -104,6 +109,13 @@ func (s *Signer) SetReferenceIDAttribute(refIDAttribute string) {
 func (s *Signer) setDigest() (err error) {
 	references := s.signedInfo.FindElements("./Reference")
 	for _, ref := range references {
+		// Skip external references like cid: URIs (used for MIME attachments in WS-Security).
+		// These have pre-computed digests and use transforms we don't implement.
+		uri := ref.SelectAttrValue("URI", "")
+		if strings.HasPrefix(uri, "cid:") {
+			continue
+		}
+
 		doc := s.xml.Copy()
 
 		transforms := ref.SelectElement("Transforms")
@@ -148,9 +160,13 @@ func (s *Signer) setSignature() error {
 		return errors.New("signedxml: unsupported algorithm")
 	}
 
-	hasher := signingAlgorithm.hash.New()
-	hasher.Write([]byte(canonSignedInfo))
-	hashed = hasher.Sum(nil)
+	// Ed25519 is "pure" - it signs the message directly without pre-hashing
+	// For other algorithms, we hash the canonicalized SignedInfo first
+	if signingAlgorithm.algorithm != "ed25519" {
+		hasher := signingAlgorithm.hash.New()
+		hasher.Write([]byte(canonSignedInfo))
+		hashed = hasher.Sum(nil)
+	}
 
 	switch signingAlgorithm.algorithm {
 	case "rsa":
@@ -169,6 +185,14 @@ func (s *Signer) setSignature() error {
 			return fmt.Errorf("unexpected %T (expected *rsa.PrivateKey)", s.privateKey)
 		}
 		signature, err = rsa.SignPSS(rand.Reader, pk, signingAlgorithm.hash, hashed, pssOptions)
+	case "ed25519":
+		// Ed25519 is a "pure" signature scheme - it signs the message directly
+		// without pre-hashing. The message is the canonicalized SignedInfo.
+		pk, ok := s.privateKey.(ed25519.PrivateKey)
+		if !ok {
+			return fmt.Errorf("unexpected %T (expected ed25519.PrivateKey)", s.privateKey)
+		}
+		signature = ed25519.Sign(pk, []byte(canonSignedInfo))
 		/*
 			case "dsa":
 				h1, h2, err = dsa.Sign(rand.Reader, s.privateKey.(*dsa.PrivateKey), hashed)
