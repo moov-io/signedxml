@@ -39,6 +39,8 @@ func init() {
 		"http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256": x509.ECDSAWithSHA256,
 		"http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384": x509.ECDSAWithSHA384,
 		"http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512": x509.ECDSAWithSHA512,
+		// Ed25519 (EdDSA) algorithms - RFC 9231 Section 2.3.1, eDelivery AS4 2.0
+		"http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519": x509.PureEd25519,
 	}
 
 	CanonicalizationAlgorithms = map[string]CanonicalizationAlgorithm{
