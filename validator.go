@@ -232,7 +232,7 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 }
 
 func (v *Validator) validateSignature() error {
-	canonSignedInfo, err := v.canonAlgorithm.ProcessElement(v.signedInfo, "")
+	canonSignedInfo, err := v.canonAlgorithm.ProcessElement(v.signedInfo, v.canonTransform)
 	if err != nil {
 		return err
 	}
