@@ -132,7 +132,7 @@ func (s *Signer) setDigest() (err error) {
 }
 
 func (s *Signer) setSignature() error {
-	canonSignedInfo, err := s.canonAlgorithm.ProcessElement(s.signedInfo, "")
+	canonSignedInfo, err := s.canonAlgorithm.ProcessElement(s.signedInfo, s.canonTransform)
 	if err != nil {
 		return err
 	}
