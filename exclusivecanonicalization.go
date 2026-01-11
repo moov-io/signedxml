@@ -214,6 +214,19 @@ func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element, prefixe
 		elementAttributes = append(elementAttributes, etree.Attr{Key: "xmlns", Value: currentNS})
 	}
 
+	// First, handle InclusiveNamespaces prefixes that are in scope from ancestors
+	// According to exc-c14n spec, namespaces in the InclusiveNamespaces PrefixList
+	// should be treated like inclusive canonicalization - they are always output
+	// if they are in scope, even if not visibly used in the element
+	for _, prefix := range e.inclusiveNamespacePrefixList {
+		if !contains(prefixesInScope, prefix) {
+			if uri, ok := e.namespaces[prefix]; ok && uri != "" {
+				nsListToRender["xmlns:"+prefix] = uri
+				prefixesInScope = append(prefixesInScope, prefix)
+			}
+		}
+	}
+
 	for _, attr := range node.Attr {
 		// include the namespaces if they are in the inclusiveNamespacePrefixList
 		if attr.Space == "xmlns" {

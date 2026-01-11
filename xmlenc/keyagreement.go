@@ -156,6 +156,14 @@ func (ka *X25519KeyAgreement) WrapKey(cek []byte, wrapAlgorithm string) (*Encryp
 							},
 						},
 					},
+					RecipientKeyInfo: &KeyInfo{
+						KeyValue: &KeyValue{
+							ECKeyValue: &ECKeyValue{
+								NamedCurve: "urn:ietf:params:xml:ns:keyprov:curve:x25519",
+								PublicKey:  ka.RecipientPublicKey.Bytes(),
+							},
+						},
+					},
 				},
 			},
 			CipherData: &CipherData{

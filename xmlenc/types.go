@@ -338,6 +338,19 @@ func (am *AgreementMethod) appendTo(parent *etree.Element) {
 			cert := x509.CreateElement("ds:X509Certificate")
 			cert.SetText(base64.StdEncoding.EncodeToString(am.RecipientKeyInfo.X509Data.X509Certificate))
 		}
+		// Handle KeyValue for EC keys (X25519)
+		if am.RecipientKeyInfo.KeyValue != nil && am.RecipientKeyInfo.KeyValue.ECKeyValue != nil {
+			kv := rki.CreateElement("ds:KeyValue")
+			kv.CreateAttr("xmlns:ds", NamespaceXMLDSig)
+			ec := kv.CreateElement("dsig11:ECKeyValue")
+			ec.CreateAttr("xmlns:dsig11", NamespaceXMLDSig11)
+			if am.RecipientKeyInfo.KeyValue.ECKeyValue.NamedCurve != "" {
+				nc := ec.CreateElement("dsig11:NamedCurve")
+				nc.CreateAttr("URI", am.RecipientKeyInfo.KeyValue.ECKeyValue.NamedCurve)
+			}
+			pk := ec.CreateElement("dsig11:PublicKey")
+			pk.SetText(base64.StdEncoding.EncodeToString(am.RecipientKeyInfo.KeyValue.ECKeyValue.PublicKey))
+		}
 	}
 }
 
