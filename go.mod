@@ -6,7 +6,7 @@ toolchain go1.26.1
 
 require (
 	github.com/beevik/etree v1.6.0
-	github.com/russellhaering/goxmldsig v1.5.0
+	github.com/russellhaering/goxmldsig v1.6.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/stretchr/testify v1.11.1
 )
