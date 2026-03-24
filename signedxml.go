@@ -96,6 +96,14 @@ var CanonicalizationAlgorithms map[string]CanonicalizationAlgorithm
 var hashAlgorithms map[string]crypto.Hash
 var signatureAlgorithms map[string]x509.SignatureAlgorithm
 
+// rsaPSSHashAlgorithms maps RSA-PSS signature algorithms to their corresponding
+// hash functions. Used by both signer and validator.
+var rsaPSSHashAlgorithms = map[x509.SignatureAlgorithm]crypto.Hash{
+	x509.SHA256WithRSAPSS: crypto.SHA256,
+	x509.SHA384WithRSAPSS: crypto.SHA384,
+	x509.SHA512WithRSAPSS: crypto.SHA512,
+}
+
 // signatureData provides options for verifying a signed XML document
 type signatureData struct {
 	xml            *etree.Document
