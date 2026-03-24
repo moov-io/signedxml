@@ -172,7 +172,7 @@ func AESKeyUnwrapWithIV(kek, ciphertext, expectedIV []byte) ([]byte, error) {
 	for j := 5; j >= 0; j-- {
 		for i := n; i >= 1; i-- {
 			// t = n*j+i
-			t := uint64(n*j + i)
+			t := uint64(n*j + i) //nolint:gosec // n<=6, j<=5, i<=n; overflow impossible
 
 			// A ^ t
 			tBytes := make([]byte, 8)
@@ -278,7 +278,7 @@ func AESCBCEncrypt(key, plaintext []byte) ([]byte, error) {
 	padtext := make([]byte, len(plaintext)+padding)
 	copy(padtext, plaintext)
 	for i := len(plaintext); i < len(padtext); i++ {
-		padtext[i] = byte(padding)
+		padtext[i] = byte(padding) //nolint:gosec // padding <= blockSize (16)
 	}
 
 	// Generate random IV
@@ -326,7 +326,7 @@ func AESCBCDecrypt(key, ciphertext []byte) ([]byte, error) {
 		return nil, fmt.Errorf("invalid PKCS#7 padding")
 	}
 	for i := len(plaintext) - padding; i < len(plaintext); i++ {
-		if plaintext[i] != byte(padding) {
+		if plaintext[i] != byte(padding) { //nolint:gosec // padding <= blockSize (16)
 			return nil, fmt.Errorf("invalid PKCS#7 padding")
 		}
 	}
