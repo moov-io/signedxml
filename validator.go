@@ -193,7 +193,7 @@ func (v *Validator) validateSignature() error {
 
 // isECDSAAlgorithm returns true if the algorithm is ECDSA
 func isECDSAAlgorithm(alg x509.SignatureAlgorithm) bool {
-	switch alg {
+	switch alg { //nolint:exhaustive
 	case x509.ECDSAWithSHA1, x509.ECDSAWithSHA256, x509.ECDSAWithSHA384, x509.ECDSAWithSHA512:
 		return true
 	default:
