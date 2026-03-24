@@ -407,7 +407,11 @@ func ParseEncryptedData(elem *etree.Element) (*EncryptedData, error) {
 
 	// Parse EncryptionMethod
 	if emElem := elem.FindElement("./EncryptionMethod"); emElem != nil {
-		ed.EncryptionMethod = parseEncryptionMethod(emElem)
+		var err error
+		ed.EncryptionMethod, err = parseEncryptionMethod(emElem)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse EncryptionMethod: %w", err)
+		}
 	}
 
 	// Parse KeyInfo
@@ -444,7 +448,11 @@ func ParseEncryptedKey(elem *etree.Element) (*EncryptedKey, error) {
 
 	// Parse EncryptionMethod
 	if emElem := elem.FindElement("./EncryptionMethod"); emElem != nil {
-		ek.EncryptionMethod = parseEncryptionMethod(emElem)
+		var err error
+		ek.EncryptionMethod, err = parseEncryptionMethod(emElem)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse EncryptionMethod: %w", err)
+		}
 	}
 
 	// Parse KeyInfo
@@ -483,7 +491,7 @@ func ParseEncryptedKey(elem *etree.Element) (*EncryptedKey, error) {
 	return ek, nil
 }
 
-func parseEncryptionMethod(elem *etree.Element) *EncryptionMethod {
+func parseEncryptionMethod(elem *etree.Element) (*EncryptionMethod, error) {
 	em := &EncryptionMethod{
 		Algorithm: elem.SelectAttrValue("Algorithm", ""),
 	}
@@ -492,7 +500,11 @@ func parseEncryptionMethod(elem *etree.Element) *EncryptionMethod {
 		fmt.Sscanf(ksElem.Text(), "%d", &em.KeySize)
 	}
 	if opElem := elem.FindElement("./OAEPparams"); opElem != nil {
-		em.OAEPParams, _ = base64.StdEncoding.DecodeString(opElem.Text())
+		var err error
+		em.OAEPParams, err = base64.StdEncoding.DecodeString(opElem.Text())
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode OAEPparams: %w", err)
+		}
 	}
 	if dmElem := elem.FindElement("./DigestMethod"); dmElem != nil {
 		em.DigestMethod = dmElem.SelectAttrValue("Algorithm", "")
@@ -501,7 +513,7 @@ func parseEncryptionMethod(elem *etree.Element) *EncryptionMethod {
 		em.MGFAlgorithm = mgfElem.SelectAttrValue("Algorithm", "")
 	}
 
-	return em
+	return em, nil
 }
 
 func parseCipherData(elem *etree.Element) (*CipherData, error) {
@@ -550,23 +562,35 @@ func parseKeyInfo(elem *etree.Element) (*KeyInfo, error) {
 	}
 
 	if amElem := elem.FindElement("./AgreementMethod"); amElem != nil {
-		ki.AgreementMethod = parseAgreementMethod(amElem)
+		var err error
+		ki.AgreementMethod, err = parseAgreementMethod(amElem)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse AgreementMethod: %w", err)
+		}
 	}
 
 	return ki, nil
 }
 
-func parseAgreementMethod(elem *etree.Element) *AgreementMethod {
+func parseAgreementMethod(elem *etree.Element) (*AgreementMethod, error) {
 	am := &AgreementMethod{
 		Algorithm: elem.SelectAttrValue("Algorithm", ""),
 	}
 
 	if kanElem := elem.FindElement("./KA-Nonce"); kanElem != nil {
-		am.KANonce, _ = base64.StdEncoding.DecodeString(kanElem.Text())
+		var err error
+		am.KANonce, err = base64.StdEncoding.DecodeString(kanElem.Text())
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode KA-Nonce: %w", err)
+		}
 	}
 
 	if kdmElem := elem.FindElement("./KeyDerivationMethod"); kdmElem != nil {
-		am.KeyDerivationMethod = parseKeyDerivationMethod(kdmElem)
+		var err error
+		am.KeyDerivationMethod, err = parseKeyDerivationMethod(kdmElem)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse KeyDerivationMethod: %w", err)
+		}
 	}
 
 	// Parse OriginatorKeyInfo (which contains KeyValue/ECKeyValue)
@@ -581,7 +605,11 @@ func parseAgreementMethod(elem *etree.Element) *AgreementMethod {
 				}
 				// Parse public key (dsig11:PublicKey)
 				if pkElem := eckElem.FindElement("./PublicKey"); pkElem != nil {
-					am.OriginatorKeyInfo.KeyValue.ECKeyValue.PublicKey, _ = base64.StdEncoding.DecodeString(pkElem.Text())
+					var err error
+					am.OriginatorKeyInfo.KeyValue.ECKeyValue.PublicKey, err = base64.StdEncoding.DecodeString(pkElem.Text())
+					if err != nil {
+						return nil, fmt.Errorf("failed to decode OriginatorKeyInfo PublicKey: %w", err)
+					}
 				}
 			}
 		}
@@ -597,16 +625,20 @@ func parseAgreementMethod(elem *etree.Element) *AgreementMethod {
 					NamedCurve: eckElem.SelectAttrValue("NamedCurve", ""),
 				}
 				if pkElem := eckElem.FindElement("./PublicKey"); pkElem != nil {
-					am.RecipientKeyInfo.KeyValue.ECKeyValue.PublicKey, _ = base64.StdEncoding.DecodeString(pkElem.Text())
+					var err error
+					am.RecipientKeyInfo.KeyValue.ECKeyValue.PublicKey, err = base64.StdEncoding.DecodeString(pkElem.Text())
+					if err != nil {
+						return nil, fmt.Errorf("failed to decode RecipientKeyInfo PublicKey: %w", err)
+					}
 				}
 			}
 		}
 	}
 
-	return am
+	return am, nil
 }
 
-func parseKeyDerivationMethod(elem *etree.Element) *KeyDerivationMethod {
+func parseKeyDerivationMethod(elem *etree.Element) (*KeyDerivationMethod, error) {
 	kdm := &KeyDerivationMethod{
 		Algorithm: elem.SelectAttrValue("Algorithm", ""),
 	}
@@ -626,15 +658,23 @@ func parseKeyDerivationMethod(elem *etree.Element) *KeyDerivationMethod {
 			kdm.HKDFParams.PRF = prfElem.SelectAttrValue("Algorithm", "")
 		}
 		if saltElem := paramsElem.FindElement("./Salt/Specified"); saltElem != nil {
-			kdm.HKDFParams.Salt, _ = base64.StdEncoding.DecodeString(saltElem.Text())
+			var err error
+			kdm.HKDFParams.Salt, err = base64.StdEncoding.DecodeString(saltElem.Text())
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode HKDF Salt: %w", err)
+			}
 		}
 		if infoElem := paramsElem.FindElement("./Info"); infoElem != nil {
-			kdm.HKDFParams.Info, _ = base64.StdEncoding.DecodeString(infoElem.Text())
+			var err error
+			kdm.HKDFParams.Info, err = base64.StdEncoding.DecodeString(infoElem.Text())
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode HKDF Info: %w", err)
+			}
 		}
 		if klElem := paramsElem.FindElement("./KeyLength"); klElem != nil {
 			fmt.Sscanf(klElem.Text(), "%d", &kdm.HKDFParams.KeyLength)
 		}
 	}
 
-	return kdm
+	return kdm, nil
 }

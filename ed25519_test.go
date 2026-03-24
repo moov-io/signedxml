@@ -167,7 +167,8 @@ func TestEd25519TamperedSignature(t *testing.T) {
     </ds:Signature>
 </root>`
 
-		signer, _ := NewSigner(xmlTemplate)
+		signer, err := NewSigner(xmlTemplate)
+		So(err, ShouldBeNil)
 		signedXML, err := signer.Sign(privKey)
 		So(err, ShouldBeNil)
 
