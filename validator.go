@@ -193,8 +193,12 @@ func (v *Validator) validateSignature() error {
 
 // isECDSAAlgorithm returns true if the algorithm is ECDSA
 func isECDSAAlgorithm(alg x509.SignatureAlgorithm) bool {
-	return alg == x509.ECDSAWithSHA1 || alg == x509.ECDSAWithSHA256 ||
-		alg == x509.ECDSAWithSHA384 || alg == x509.ECDSAWithSHA512
+	switch alg {
+	case x509.ECDSAWithSHA1, x509.ECDSAWithSHA256, x509.ECDSAWithSHA384, x509.ECDSAWithSHA512:
+		return true
+	default:
+		return false
+	}
 }
 
 // convertECDSARawToASN1 converts an ECDSA signature from the raw r||s

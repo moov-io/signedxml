@@ -4,6 +4,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/x509"
 	"encoding/asn1"
 	"math/big"
@@ -37,7 +39,8 @@ func TestConvertECDSARawToASN1(t *testing.T) {
 			t.Fatal(err)
 		}
 		msg := []byte("test data for ECDSA signature")
-		r, s, err := ecdsa.Sign(rand.Reader, key, msg)
+		hash := sha256.Sum256(msg)
+		r, s, err := ecdsa.Sign(rand.Reader, key, hash[:])
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,7 +71,7 @@ func TestConvertECDSARawToASN1(t *testing.T) {
 		}
 
 		// Verify with Go's ecdsa.Verify using the DER-decoded values
-		if !ecdsa.Verify(&key.PublicKey, msg, parsed.R, parsed.S) {
+		if !ecdsa.Verify(&key.PublicKey, hash[:], parsed.R, parsed.S) {
 			t.Error("signature verification failed after roundtrip")
 		}
 	})
@@ -79,7 +82,8 @@ func TestConvertECDSARawToASN1(t *testing.T) {
 			t.Fatal(err)
 		}
 		msg := []byte("test P384")
-		r, s, err := ecdsa.Sign(rand.Reader, key, msg)
+		hash := sha512.Sum384(msg)
+		r, s, err := ecdsa.Sign(rand.Reader, key, hash[:])
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -99,7 +103,7 @@ func TestConvertECDSARawToASN1(t *testing.T) {
 		if _, err := asn1.Unmarshal(der, &parsed); err != nil {
 			t.Fatalf("failed to unmarshal: %v", err)
 		}
-		if !ecdsa.Verify(&key.PublicKey, msg, parsed.R, parsed.S) {
+		if !ecdsa.Verify(&key.PublicKey, hash[:], parsed.R, parsed.S) {
 			t.Error("P-384 signature verification failed after roundtrip")
 		}
 	})
