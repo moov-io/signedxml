@@ -176,7 +176,11 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 					if transform.ChildElements() != nil {
 						tDoc := etree.NewDocument()
 						tDoc.SetRoot(transform.Copy())
-						transformContent, _ = tDoc.WriteToString()
+						content, writeErr := tDoc.WriteToString()
+						if writeErr != nil {
+							return nil, writeErr
+						}
+						transformContent = content
 					}
 
 					canonicalXML, err = canonAlgo.ProcessElement(refElement, transformContent)
