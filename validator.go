@@ -1,7 +1,6 @@
 package signedxml
 
 import (
-	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -266,15 +265,8 @@ func (v *Validator) verifyRSAPSSSignature(certDer, data, sig []byte) error {
 		return err
 	}
 
-	var hash crypto.Hash
-	switch v.sigAlgorithm {
-	case x509.SHA256WithRSAPSS:
-		hash = crypto.SHA256
-	case x509.SHA384WithRSAPSS:
-		hash = crypto.SHA384
-	case x509.SHA512WithRSAPSS:
-		hash = crypto.SHA512
-	default:
+	hash, ok := rsaPSSHashAlgorithms[v.sigAlgorithm]
+	if !ok {
 		return fmt.Errorf("unsupported RSA-PSS algorithm: %v", v.sigAlgorithm)
 	}
 
