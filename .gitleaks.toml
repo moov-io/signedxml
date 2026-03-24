@@ -1,0 +1,5 @@
+[allowlist]
+  description = "Allow W3C XML Encryption test vectors"
+  paths = [
+    '''xmlenc/w3c_interop_test\.go''',
+  ]
