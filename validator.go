@@ -2,10 +2,12 @@ package signedxml
 
 import (
 	"crypto/x509"
+	"encoding/asn1"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
+	"math/big"
 
 	"github.com/beevik/etree"
 )
@@ -166,6 +168,16 @@ func (v *Validator) validateSignature() error {
 	}
 	sig := []byte(b64)
 
+	// XML DSig encodes ECDSA signatures as raw r||s concatenation (RFC 4050),
+	// but Go's x509.CheckSignature expects ASN.1 DER encoding.
+	if isECDSAAlgorithm(v.sigAlgorithm) {
+		derSig, convErr := convertECDSARawToASN1(sig)
+		if convErr != nil {
+			return convErr
+		}
+		sig = derSig
+	}
+
 	v.signingCert = x509.Certificate{}
 	for _, cert := range v.Certificates {
 		err := cert.CheckSignature(v.sigAlgorithm, []byte(canonSignedInfo), sig)
@@ -177,6 +189,33 @@ func (v *Validator) validateSignature() error {
 
 	return errors.New("signedxml: Calculated signature does not match the " +
 		"SignatureValue provided")
+}
+
+// isECDSAAlgorithm returns true if the algorithm is ECDSA
+func isECDSAAlgorithm(alg x509.SignatureAlgorithm) bool {
+	switch alg { //nolint:exhaustive
+	case x509.ECDSAWithSHA1, x509.ECDSAWithSHA256, x509.ECDSAWithSHA384, x509.ECDSAWithSHA512:
+		return true
+	default:
+		return false
+	}
+}
+
+// convertECDSARawToASN1 converts an ECDSA signature from the raw r||s
+// concatenation format used by XML DSig (RFC 4050) to the ASN.1 DER
+// encoding expected by Go's x509.Certificate.CheckSignature.
+// The input must be an even number of bytes, with r and s each occupying
+// half the total length.
+func convertECDSARawToASN1(raw []byte) ([]byte, error) {
+	if len(raw) == 0 || len(raw)%2 != 0 {
+		return nil, fmt.Errorf("signedxml: invalid ECDSA signature length %d", len(raw))
+	}
+	half := len(raw) / 2
+	r := new(big.Int).SetBytes(raw[:half])
+	s := new(big.Int).SetBytes(raw[half:])
+	return asn1.Marshal(struct {
+		R, S *big.Int
+	}{r, s})
 }
 
 func (v *Validator) loadCertificates() error {
