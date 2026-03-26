@@ -313,7 +313,7 @@ func getCertFromPEMString(pemString string) (*x509.Certificate, error) {
 		return &x509.Certificate{}, errors.New("Could not parse Certificate PEM")
 	}
 	if pemBlock.Type != "CERTIFICATE" {
-		return &x509.Certificate{}, errors.New("Found wrong key type")
+		return &x509.Certificate{}, fmt.Errorf("unexpected PEM block %v", pemBlock.Type)
 	}
 
 	cert, err := x509.ParseCertificate(pemBlock.Bytes)
