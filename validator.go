@@ -283,6 +283,8 @@ func isECDSAAlgorithm(alg x509.SignatureAlgorithm) bool {
 // convertECDSARawToASN1 converts an ECDSA signature from the raw r||s
 // concatenation format used by XML DSig (RFC 4050) to the ASN.1 DER
 // encoding expected by Go's x509.Certificate.CheckSignature.
+// The input must be an even number of bytes, with r and s each occupying
+// half the total length.
 func convertECDSARawToASN1(alg x509.SignatureAlgorithm, raw []byte) ([]byte, error) {
 	if len(raw) == 0 || len(raw)%2 != 0 {
 		return nil, fmt.Errorf("signedxml: invalid ECDSA signature length %d", len(raw))
