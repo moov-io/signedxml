@@ -79,10 +79,8 @@ func collectAncestorNamespaces(elem *etree.Element) map[string]string {
 
 // see CanonicalizationAlgorithm.ProcessElement
 func (e ExclusiveCanonicalization) ProcessElement(inputXML *etree.Element, transformXML string) (outputXML string, err error) {
-	// Collect namespace declarations from ancestors before copying
 	ancestorNamespaces := collectAncestorNamespaces(inputXML)
 
-	// Create a copy for processing
 	doc := etree.NewDocument()
 	doc.SetRoot(inputXML.Copy())
 
@@ -107,7 +105,7 @@ func (e ExclusiveCanonicalization) Process(inputXML string, transformXML string)
 	return e.ProcessDocument(doc, transformXML)
 }
 
-func (e ExclusiveCanonicalization) processDocument(doc *etree.Document, transformXML string) (outputXML string, err error) {
+func (e *ExclusiveCanonicalization) processDocument(doc *etree.Document, transformXML string) (outputXML string, err error) {
 	e.namespaces = make(map[string]string)
 
 	doc.WriteSettings.CanonicalEndTags = true
@@ -125,8 +123,7 @@ func (e ExclusiveCanonicalization) processDocument(doc *etree.Document, transfor
 // processDocumentWithAncestorNS is like processDocument but pre-populates the
 // namespace map with declarations from ancestor elements. This is needed when
 // processing an element that was extracted from its original context.
-func (e ExclusiveCanonicalization) processDocumentWithAncestorNS(doc *etree.Document, transformXML string, ancestorNS map[string]string) (outputXML string, err error) {
-	// Initialize with ancestor namespaces
+func (e *ExclusiveCanonicalization) processDocumentWithAncestorNS(doc *etree.Document, transformXML string, ancestorNS map[string]string) (outputXML string, err error) {
 	e.namespaces = make(map[string]string)
 	for k, v := range ancestorNS {
 		e.namespaces[k] = v
@@ -160,7 +157,7 @@ func (e *ExclusiveCanonicalization) loadPrefixList(transformXML string) {
 }
 
 // process nodes outside of the root element
-func (e ExclusiveCanonicalization) processDocLevelNodes(doc *etree.Document) {
+func (e *ExclusiveCanonicalization) processDocLevelNodes(doc *etree.Document) {
 	// keep track of the previous node action to manage line returns in CharData
 	previousNodeRemoved := false
 
@@ -213,7 +210,7 @@ func (e ExclusiveCanonicalization) processDocLevelNodes(doc *etree.Document) {
 	}
 }
 
-func (e ExclusiveCanonicalization) processRecursive(node *etree.Element,
+func (e *ExclusiveCanonicalization) processRecursive(node *etree.Element,
 	prefixesInScope []string, defaultNS string) {
 
 	newDefaultNS, newPrefixesInScope := e.renderAttributes(node, prefixesInScope, defaultNS)
@@ -246,7 +243,7 @@ func (e ExclusiveCanonicalization) processRecursive(node *etree.Element,
 	}
 }
 
-func (e ExclusiveCanonicalization) renderAttributes(node *etree.Element, prefixesInScope []string, defaultNS string) (newDefaultNS string, newPrefixesInScope []string) {
+func (e *ExclusiveCanonicalization) renderAttributes(node *etree.Element, prefixesInScope []string, defaultNS string) (newDefaultNS string, newPrefixesInScope []string) {
 	currentNS := node.SelectAttrValue("xmlns", defaultNS)
 	elementAttributes := []etree.Attr{}
 	nsListToRender := make(map[string]string)

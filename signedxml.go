@@ -94,14 +94,14 @@ var signatureAlgorithms map[string]x509.SignatureAlgorithm
 
 // signatureData provides options for verifying a signed XML document
 type signatureData struct {
-	xml              *etree.Document
-	signature        *etree.Element
-	signedInfo       *etree.Element
-	sigValue         string
-	sigAlgorithm     x509.SignatureAlgorithm
-	canonAlgorithm   CanonicalizationAlgorithm
-	canonTransform   string // InclusiveNamespaces or other transform content from CanonicalizationMethod
-	refIDAttribute   string
+	xml            *etree.Document
+	signature      *etree.Element
+	signedInfo     *etree.Element
+	sigValue       string
+	sigAlgorithm   x509.SignatureAlgorithm
+	canonAlgorithm CanonicalizationAlgorithm
+	canonTransform string // InclusiveNamespaces or other transform content from CanonicalizationMethod
+	refIDAttribute string
 }
 
 // SetSignature can be used to assign an external signature for the XML doc
