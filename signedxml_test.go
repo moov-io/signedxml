@@ -1,6 +1,8 @@
 package signedxml
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
@@ -428,5 +430,59 @@ func TestSignatureDataParsing(t *testing.T) {
 				So(err.Error(), ShouldContainSubstring, "signedxml:")
 			})
 		})
+	})
+}
+
+func TestRSAPSS(t *testing.T) {
+	Convey("Given RSA-PSS algorithms", t, func() {
+		Convey("isRSAPSSAlgorithm returns true only for PSS algos", func() {
+			So(isRSAPSSAlgorithm(x509.SHA256WithRSAPSS), ShouldBeTrue)
+			So(isRSAPSSAlgorithm(x509.SHA384WithRSAPSS), ShouldBeTrue)
+			So(isRSAPSSAlgorithm(x509.SHA512WithRSAPSS), ShouldBeTrue)
+			So(isRSAPSSAlgorithm(x509.SHA256WithRSA), ShouldBeFalse)
+		})
+	})
+}
+
+func TestRSAPSSRoundtrip(t *testing.T) {
+	Convey("RSA-PSS sign and verify roundtrip", t, func() {
+		priv, err := rsa.GenerateKey(rand.Reader, 2048)
+		So(err, ShouldBeNil)
+
+		template := `<?xml version="1.0"?>
+<root ID="test-root">
+  <data>test data for PSS</data>
+  <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+    <SignedInfo>
+      <CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+      <SignatureMethod Algorithm="http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1"/>
+      <Reference URI="#test-root">
+        <Transforms>
+          <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+          <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+        </Transforms>
+        <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+        <DigestValue></DigestValue>
+      </Reference>
+    </SignedInfo>
+    <SignatureValue></SignatureValue>
+  </Signature>
+</root>`
+
+		s, err := NewSigner(template)
+		So(err, ShouldBeNil)
+		s.SetReferenceIDAttribute("ID")
+
+		signed, err := s.Sign(priv)
+		So(err, ShouldBeNil)
+
+		v, err := NewValidator(signed)
+		So(err, ShouldBeNil)
+		v.Certificates = []x509.Certificate{{
+			PublicKey: &priv.PublicKey,
+		}}
+
+		_, err = v.ValidateReferences()
+		So(err, ShouldBeNil)
 	})
 }
