@@ -52,7 +52,7 @@ func TestConvertECDSARawToASN1(t *testing.T) {
 		copy(raw[32-len(rBytes):32], rBytes)
 		copy(raw[64-len(sBytes):64], sBytes)
 
-		der, err := convertECDSARawToASN1(raw)
+		der, err := convertECDSARawToASN1(x509.ECDSAWithSHA256, raw)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -94,7 +94,7 @@ func TestConvertECDSARawToASN1(t *testing.T) {
 		copy(raw[48-len(rBytes):48], rBytes)
 		copy(raw[96-len(sBytes):96], sBytes)
 
-		der, err := convertECDSARawToASN1(raw)
+		der, err := convertECDSARawToASN1(x509.ECDSAWithSHA384, raw)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -109,14 +109,14 @@ func TestConvertECDSARawToASN1(t *testing.T) {
 	})
 
 	t.Run("empty_input", func(t *testing.T) {
-		_, err := convertECDSARawToASN1([]byte{})
+		_, err := convertECDSARawToASN1(x509.ECDSAWithSHA256, []byte{})
 		if err == nil {
 			t.Error("expected error for empty input")
 		}
 	})
 
 	t.Run("odd_length", func(t *testing.T) {
-		_, err := convertECDSARawToASN1(make([]byte, 63))
+		_, err := convertECDSARawToASN1(x509.ECDSAWithSHA256, make([]byte, 63))
 		if err == nil {
 			t.Error("expected error for odd-length input")
 		}

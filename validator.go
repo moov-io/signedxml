@@ -162,16 +162,16 @@ func (v *Validator) validateSignature() error {
 		return err
 	}
 
-	b64, err := base64.StdEncoding.DecodeString(v.sigValue)
+	sigBytes, err := base64.StdEncoding.DecodeString(v.sigValue)
 	if err != nil {
 		return err
 	}
-	sig := []byte(b64)
+	sig := sigBytes
 
 	// XML DSig encodes ECDSA signatures as raw r||s concatenation (RFC 4050),
 	// but Go's x509.CheckSignature expects ASN.1 DER encoding.
 	if isECDSAAlgorithm(v.sigAlgorithm) {
-		derSig, convErr := convertECDSARawToASN1(sig)
+		derSig, convErr := convertECDSARawToASN1(v.sigAlgorithm, sig)
 		if convErr != nil {
 			return convErr
 		}
@@ -204,11 +204,27 @@ func isECDSAAlgorithm(alg x509.SignatureAlgorithm) bool {
 // convertECDSARawToASN1 converts an ECDSA signature from the raw r||s
 // concatenation format used by XML DSig (RFC 4050) to the ASN.1 DER
 // encoding expected by Go's x509.Certificate.CheckSignature.
-// The input must be an even number of bytes, with r and s each occupying
-// half the total length.
-func convertECDSARawToASN1(raw []byte) ([]byte, error) {
+func convertECDSARawToASN1(alg x509.SignatureAlgorithm, raw []byte) ([]byte, error) {
 	if len(raw) == 0 || len(raw)%2 != 0 {
 		return nil, fmt.Errorf("signedxml: invalid ECDSA signature length %d", len(raw))
+	}
+	switch alg {
+	case x509.ECDSAWithSHA256:
+		if len(raw) != 64 {
+			return nil, fmt.Errorf("signedxml: invalid ECDSA signature length %d (expected 64)", len(raw))
+		}
+	case x509.ECDSAWithSHA384:
+		if len(raw) != 96 {
+			return nil, fmt.Errorf("signedxml: invalid ECDSA signature length %d (expected 96)", len(raw))
+		}
+	case x509.ECDSAWithSHA512:
+		if len(raw) != 132 {
+			return nil, fmt.Errorf("signedxml: invalid ECDSA signature length %d (expected 132)", len(raw))
+		}
+	case x509.ECDSAWithSHA1:
+		if len(raw) != 64 && len(raw) != 48 {
+			return nil, fmt.Errorf("signedxml: invalid ECDSA signature length %d (expected 48 or 64)", len(raw))
+		}
 	}
 	half := len(raw) / 2
 	r := new(big.Int).SetBytes(raw[:half])
