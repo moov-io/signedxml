@@ -2,7 +2,6 @@ package signedxml
 
 import (
 	"crypto"
-	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -51,7 +50,7 @@ type cryptoHash struct {
 // Signer provides options for signing an XML document
 type Signer struct {
 	signatureData
-	privateKey interface{}
+	privateKey crypto.Signer
 }
 
 // NewSigner returns a *Signer for the XML provided
@@ -70,7 +69,7 @@ func NewSignerFromDoc(doc *etree.Document) (*Signer, error) {
 }
 
 // Sign populates the XML digest and signature based on the parameters present and privateKey given
-func (s *Signer) Sign(privateKey interface{}) (string, error) {
+func (s *Signer) Sign(privateKey crypto.Signer) (string, error) {
 	s.privateKey = privateKey
 
 	if s.signature == nil {
@@ -178,19 +177,8 @@ func (s *Signer) setSignature() error {
 
 	switch signingAlgorithm.algorithm {
 	case "rsa":
-		pk, ok := s.privateKey.(*rsa.PrivateKey)
-		if ok {
-			signature, err = rsa.SignPKCS1v15(rand.Reader, pk, signingAlgorithm.hash, hashed)
-		} else {
-			// Support any crypto.Signer implementation (including PKCS#11/HSM signers)
-			signer, ok := s.privateKey.(crypto.Signer)
-			if ok {
-				signerOpts := &P11SignerOpts{Hash: signingAlgorithm.hash}
-				signature, err = signer.Sign(rand.Reader, hashed, signerOpts)
-			} else {
-				return fmt.Errorf("unexpected %T (expected *rsa.PrivateKey or crypto.Signer)", s.privateKey)
-			}
-		}
+		signerOpts := &P11SignerOpts{Hash: signingAlgorithm.hash}
+		signature, err = s.privateKey.Sign(rand.Reader, hashed, signerOpts)
 	case "rsa-pss":
 		pssOptions := &rsa.PSSOptions{
 			SaltLength: rsa.PSSSaltLengthEqualsHash,
@@ -204,19 +192,7 @@ func (s *Signer) setSignature() error {
 	case "ed25519":
 		// Ed25519 is a "pure" signature scheme - it signs the message directly
 		// without pre-hashing. The message is the canonicalized SignedInfo.
-		pk, ok := s.privateKey.(ed25519.PrivateKey)
-		if ok {
-			signature = ed25519.Sign(pk, []byte(canonSignedInfo))
-		} else {
-			// Support any crypto.Signer implementation (including PKCS#11/HSM signers)
-			signer, ok := s.privateKey.(crypto.Signer)
-			if ok {
-				// For Ed25519, use Hash(0) to indicate no pre-hashing
-				signature, err = signer.Sign(rand.Reader, []byte(canonSignedInfo), crypto.Hash(0))
-			} else {
-				return fmt.Errorf("unexpected %T (expected ed25519.PrivateKey or crypto.Signer)", s.privateKey)
-			}
-		}
+		signature, err = s.privateKey.Sign(rand.Reader, []byte(canonSignedInfo), crypto.Hash(0))
 		/*
 			case "dsa":
 				h1, h2, err = dsa.Sign(rand.Reader, s.privateKey.(*dsa.PrivateKey), hashed)
