@@ -25,6 +25,7 @@ _testmain.go
 
 /bin/
 /gitleaks.tar.gz
+/gitleaks
 /lint-project.sh
-/coverage.txt
+coverage.*
 .golangci-lint-generated.yml
