@@ -13,6 +13,8 @@
 
 The signedxml package transforms and validates signed xml documents. The main use case is to support Single Sign On protocols like SAML and WS-Federation.
 
+The `xmlenc` subpackage provides XML Encryption 1.1 support for encrypting and decrypting XML documents.
+
 Other packages that provide similar functionality rely on C libraries, which makes them difficult to run across platforms without significant configuration.  `signedxml` is written in pure go, and can be easily used on any platform. This package was originally created by [Matt Smith](https://github.com/ma314smith) and is in use at Moov Financial.
 
 ### Install
@@ -38,6 +40,10 @@ Other packages that provide similar functionality rely on C libraries, which mak
   - http://www.w3.org/2001/04/xmldsig-more#rsa-sha256
   - http://www.w3.org/2001/04/xmldsig-more#rsa-sha384
   - http://www.w3.org/2001/04/xmldsig-more#rsa-sha512
+  - http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1 (RSA-PSS)
+  - http://www.w3.org/2007/05/xmldsig-more#sha384-rsa-MGF1 (RSA-PSS)
+  - http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1 (RSA-PSS)
+  - http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519 (Ed25519)
   - http://www.w3.org/2000/09/xmldsig#dsa-sha1
   - http://www.w3.org/2000/09/xmldsig#dsa-sha256
   - http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1
@@ -78,9 +84,21 @@ validator.SetSignature(<`Signature></Signature>`)
 It is expected that your XML contains the Signature element with all the parameters set (except DigestValue and SignatureValue).
 ```go
 signer, err := signedxml.NewSigner(`<YourXMLString></YourXMLString`)
-signedXML, err := signer.Sign(`*rsa.PrivateKey object`)
+signedXML, err := signer.Sign(`crypto.Signer object, e.g. *rsa.PrivateKey or ed25519.PrivateKey`)
 ```
 `Sign()` will generate the DigestValue and SignatureValue, populate it in the XML, and return the signed XML string.
+
+#### Generating signed XML with Ed25519
+```go
+import (
+    "crypto/ed25519"
+    "crypto/rand"
+)
+
+signer, err := signedxml.NewSigner(`<YourXMLString></YourXMLString`)
+privKey := ed25519.GenerateKey(rand.Reader)
+signedXML, err := signer.Sign(privKey)
+```
 
 #### Implementing custom transforms
 Additional Transform algorithms can be included by adding to the CanonicalizationAlgorithms map.  This interface will need to be implemented:

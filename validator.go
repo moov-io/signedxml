@@ -367,7 +367,7 @@ func convertECDSARawToASN1(alg x509.SignatureAlgorithm, raw []byte) ([]byte, err
 	if len(raw) == 0 || len(raw)%2 != 0 {
 		return nil, fmt.Errorf("signedxml: invalid ECDSA signature length %d", len(raw))
 	}
-	switch alg {
+	switch alg { //nolint:exhaustive
 	case x509.ECDSAWithSHA256:
 		if len(raw) != 64 {
 			return nil, fmt.Errorf("signedxml: invalid ECDSA signature length %d (expected 64)", len(raw))
