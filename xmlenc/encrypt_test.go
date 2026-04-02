@@ -250,6 +250,52 @@ func TestKeyWrapAlgorithmForContentAlgorithm(t *testing.T) {
 	}
 }
 
+func TestDecryptElementInPlace(t *testing.T) {
+	doc := etree.NewDocument()
+	root := doc.CreateElement("root")
+	doc.SetRoot(root)
+
+	elem := root.CreateElement("Data")
+	elem.SetText("Hello, World!")
+
+	recipientPrivate, _ := GenerateX25519KeyPair()
+	recipientPublic := recipientPrivate.PublicKey()
+
+	hkdfParams := DefaultHKDFParams(nil)
+
+	// Encrypt
+	senderKA, _ := NewX25519KeyAgreement(recipientPublic, hkdfParams)
+	encryptor := NewEncryptor(AlgorithmAES128GCM, senderKA)
+	ed, _ := encryptor.EncryptElement(elem)
+
+	// Replace elem with ed
+	root.RemoveChild(elem)
+	edElem := ed.ToElement()
+	root.AddChild(edElem)
+
+	// Decrypt in place
+	ephemeralPubBytes := ed.KeyInfo.EncryptedKey.KeyInfo.AgreementMethod.OriginatorKeyInfo.KeyValue.ECKeyValue.PublicKey
+	ephemeralPublic, _ := ParseX25519PublicKey(ephemeralPubBytes)
+	recipientKA := NewX25519KeyAgreementForDecrypt(recipientPrivate, ephemeralPublic, hkdfParams)
+	decryptor := NewDecryptor(recipientKA)
+	err := DecryptElementInPlace(edElem, decryptor)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check
+	if len(root.ChildElements()) != 1 {
+		t.Fatalf("expected 1 child, got %d", len(root.ChildElements()))
+	}
+	decryptedElem := root.ChildElements()[0]
+	if decryptedElem.Tag != "Data" {
+		t.Fatalf("expected Data, got %s", decryptedElem.Tag)
+	}
+	if decryptedElem.Text() != "Hello, World!" {
+		t.Fatalf("expected 'Hello, World!', got %s", decryptedElem.Text())
+	}
+}
+
 func TestEncryptedDataXMLRoundTrip(t *testing.T) {
 	// Create EncryptedData
 	ed := &EncryptedData{
