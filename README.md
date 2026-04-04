@@ -84,7 +84,7 @@ validator.SetSignature(`<Signature></Signature>`)
 It is expected that your XML contains the Signature element with all the parameters set (except DigestValue and SignatureValue).
 ```go
 signer, err := signedxml.NewSigner(`<YourXMLString></YourXMLString>`)
-signedXML, err := signer.Sign(`crypto.Signer object, e.g. *rsa.PrivateKey or *ed25519.PrivateKey`)
+signedXML, err := signer.Sign(`crypto.Signer object, e.g. *rsa.PrivateKey or ed25519.PrivateKey`)
 ```
 `Sign()` will generate the DigestValue and SignatureValue, populate it in the XML, and return the signed XML string.
 
