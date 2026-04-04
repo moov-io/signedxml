@@ -77,14 +77,14 @@ You can then verify that you trust the certificate. You can optionally supply yo
 #### Using an external Signature
 If you need to specify an external Signature, you can use the `SetSignature()` function to assign it:
 ```go
-validator.SetSignature(<`Signature></Signature>`)
+validator.SetSignature(`<Signature></Signature>`)
 ```
 
 #### Generating signed XML
 It is expected that your XML contains the Signature element with all the parameters set (except DigestValue and SignatureValue).
 ```go
-signer, err := signedxml.NewSigner(`<YourXMLString></YourXMLString`)
-signedXML, err := signer.Sign(`crypto.Signer object, e.g. *rsa.PrivateKey or ed25519.PrivateKey`)
+signer, err := signedxml.NewSigner(`<YourXMLString></YourXMLString>`)
+signedXML, err := signer.Sign(`crypto.Signer object, e.g. *rsa.PrivateKey or *ed25519.PrivateKey`)
 ```
 `Sign()` will generate the DigestValue and SignatureValue, populate it in the XML, and return the signed XML string.
 
@@ -95,8 +95,8 @@ import (
     "crypto/rand"
 )
 
-signer, err := signedxml.NewSigner(`<YourXMLString></YourXMLString`)
-privKey := ed25519.GenerateKey(rand.Reader)
+signer, err := signedxml.NewSigner(`<YourXMLString></YourXMLString>`)
+_, privKey, err := ed25519.GenerateKey(rand.Reader)
 signedXML, err := signer.Sign(privKey)
 ```
 
@@ -116,7 +116,7 @@ func (n NoChangeCanonicalization) Process(inputXML string,
 	return inputXML, nil
 }
 
-signedxml.CanonicalizationAlgorithms["http://myTranform"] = NoChangeCanonicalization{}
+signedxml.CanonicalizationAlgorithms["http://myTransform"] = NoChangeCanonicalization{}
 ```
 
 See `envelopedsignature.go` and `exclusivecanonicalization.go` for examples of actual implementations.
