@@ -88,8 +88,12 @@ func NewValidator(xml string) (*Validator, error) {
 	if err != nil {
 		return nil, err
 	}
-	v := &Validator{signatureData: signatureData{xml: doc}}
-	return v, nil
+	return NewValidatorFromDoc(doc), nil
+}
+
+// NewValidatorFromDoc returns a *Validator for the Document provided
+func NewValidatorFromDoc(doc *etree.Document) *Validator {
+	return &Validator{signatureData: signatureData{xml: doc}}
 }
 
 // SetReferenceIDAttribute set the referenceIDAttribute
