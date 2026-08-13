@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/beevik/etree"
@@ -485,4 +486,55 @@ func TestRSAPSSRoundtrip(t *testing.T) {
 		_, err = v.ValidateReferences()
 		So(err, ShouldBeNil)
 	})
+}
+
+func TestReferenceURIWithQuoteDoesNotPanic(t *testing.T) {
+	// Fuzz crash: interpolating a Reference URI containing a quote into an
+	// etree path made FindElement panic with "mismatched filter quotes".
+	doc := etree.NewDocument()
+	if err := doc.ReadFromString(`<root ID="abc"/>`); err != nil {
+		t.Fatal(err)
+	}
+	ref := etree.NewElement("Reference")
+	ref.CreateAttr("URI", "#ab'c")
+
+	s := &signatureData{xml: doc}
+	if _, err := s.findReferencedElement(ref, doc); err == nil {
+		t.Fatal("expected error for unmatched quoted URI")
+	}
+	if _, err := s.getReferencedXML(ref, doc); err == nil {
+		t.Fatal("expected error for unmatched quoted URI")
+	}
+
+	quoted := etree.NewDocument()
+	if err := quoted.ReadFromString(`<root ID="ab'c"/>`); err != nil {
+		t.Fatal(err)
+	}
+	elem, err := s.findReferencedElement(ref, quoted)
+	if err != nil {
+		t.Fatalf("expected to find ID with quote: %v", err)
+	}
+	if elem == nil || elem.SelectAttrValue("ID", "") != "ab'c" {
+		t.Fatalf("unexpected element: %#v", elem)
+	}
+}
+
+func TestValidatorQuotedReferenceURI(t *testing.T) {
+	xml, err := os.ReadFile("./testdata/bbauth-metadata.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mutated := strings.Replace(string(xml),
+		`URI="#_69b42076-409e-4476-af41-339962e49427"`,
+		`URI="#_69b42076-409e-4476-af41-339962e49'27"`,
+		1)
+
+	v, err := NewValidator(mutated)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = v.ValidateReferences()
+	if err == nil {
+		t.Fatal("expected validation error for quoted Reference URI")
+	}
 }
