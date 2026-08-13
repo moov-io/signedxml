@@ -257,32 +257,16 @@ func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etr
 	uri = strings.Replace(uri, "#", "", 1)
 	// populate doc with the referenced xml from the Reference URI
 	if uri == "" {
-		outputDoc = inputDoc
-	} else {
-		refIDAttribute := "ID"
-		if s.refIDAttribute != "" {
-			refIDAttribute = s.refIDAttribute
-		}
-		path := fmt.Sprintf(".//[@%s='%s']", refIDAttribute, uri)
-		e := inputDoc.FindElement(path)
-		if e != nil {
-			outputDoc = etree.NewDocument()
-			outputDoc.SetRoot(e.Copy())
-		} else {
-			// SAML v1.1 Assertions use AssertionID
-			path := fmt.Sprintf(".//[@AssertionID='%s']", uri)
-			e := inputDoc.FindElement(path)
-			if e != nil {
-				outputDoc = etree.NewDocument()
-				outputDoc.SetRoot(e.Copy())
-			}
-		}
+		return inputDoc, nil
 	}
 
-	if outputDoc == nil {
+	e, err := s.findReferencedElement(reference, inputDoc)
+	if err != nil {
 		return nil, errors.New("signedxml: unable to find refereced xml")
 	}
 
+	outputDoc = etree.NewDocument()
+	outputDoc.SetRoot(e.Copy())
 	return outputDoc, nil
 }
 
@@ -301,20 +285,50 @@ func (s *signatureData) findReferencedElement(reference *etree.Element, inputDoc
 	if s.refIDAttribute != "" {
 		refIDAttribute = s.refIDAttribute
 	}
-	path := fmt.Sprintf(".//[@%s='%s']", refIDAttribute, uri)
-	e := inputDoc.FindElement(path)
-	if e != nil {
+	if e := findElementByAttr(inputDoc.Root(), refIDAttribute, uri); e != nil {
 		return e, nil
 	}
 
 	// SAML v1.1 Assertions use AssertionID
-	path = fmt.Sprintf(".//[@AssertionID='%s']", uri)
-	e = inputDoc.FindElement(path)
-	if e != nil {
+	if e := findElementByAttr(inputDoc.Root(), "AssertionID", uri); e != nil {
 		return e, nil
 	}
 
 	return nil, errors.New("signedxml: unable to find referenced xml element")
+}
+
+// findElementByAttr returns the first element with a matching attribute name
+// and value. Values are compared directly instead of interpolating them into
+// an etree path, which panics on quotes.
+func findElementByAttr(root *etree.Element, attrName, attrValue string) *etree.Element {
+	if root == nil {
+		return nil
+	}
+
+	space, key := "", attrName
+	if i := strings.IndexByte(attrName, ':'); i >= 0 {
+		space, key = attrName[:i], attrName[i+1:]
+	}
+
+	if elementHasAttr(root, space, key, attrValue) {
+		return root
+	}
+	for _, child := range root.ChildElements() {
+		if found := findElementByAttr(child, attrName, attrValue); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+func elementHasAttr(e *etree.Element, space, key, value string) bool {
+	for _, a := range e.Attr {
+		// Empty space matches any namespace, matching etree path [@attr='val'].
+		if (space == "" || space == a.Space) && a.Key == key && a.Value == value {
+			return true
+		}
+	}
+	return false
 }
 
 func getCertFromPEMString(pemString string) (*x509.Certificate, error) {
