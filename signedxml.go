@@ -281,12 +281,16 @@ func (s *signatureData) findReferencedElement(reference *etree.Element, inputDoc
 		return inputDoc.Root(), nil
 	}
 
-	refIDAttribute := "ID"
+	// Try the common XML ID attribute casings used in signatures.
+	// SetReferenceIDAttribute overrides the list when callers need a custom name.
+	attrs := []string{"ID", "Id", "id"}
 	if s.refIDAttribute != "" {
-		refIDAttribute = s.refIDAttribute
+		attrs = []string{s.refIDAttribute}
 	}
-	if e := findElementByAttr(inputDoc.Root(), refIDAttribute, uri); e != nil {
-		return e, nil
+	for _, attr := range attrs {
+		if e := findElementByAttr(inputDoc.Root(), attr, uri); e != nil {
+			return e, nil
+		}
 	}
 
 	// SAML v1.1 Assertions use AssertionID
