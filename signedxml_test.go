@@ -519,6 +519,36 @@ func TestReferenceURIWithQuoteDoesNotPanic(t *testing.T) {
 	}
 }
 
+func TestFindReferencedElementIDCasings(t *testing.T) {
+	cases := []struct {
+		name string
+		xml  string
+		attr string
+	}{
+		{name: "ID", xml: `<root><item ID="abc">x</item></root>`, attr: "ID"},
+		{name: "Id", xml: `<root><item Id="abc">x</item></root>`, attr: "Id"},
+		{name: "id", xml: `<root><item id="abc">x</item></root>`, attr: "id"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			doc := etree.NewDocument()
+			if err := doc.ReadFromString(tc.xml); err != nil {
+				t.Fatal(err)
+			}
+			ref := etree.NewElement("Reference")
+			ref.CreateAttr("URI", "#abc")
+			s := &signatureData{xml: doc}
+			elem, err := s.findReferencedElement(ref, doc)
+			if err != nil {
+				t.Fatalf("expected to find %s: %v", tc.attr, err)
+			}
+			if elem.SelectAttrValue(tc.attr, "") != "abc" {
+				t.Fatalf("unexpected element: %#v", elem)
+			}
+		})
+	}
+}
+
 func TestValidatorQuotedReferenceURI(t *testing.T) {
 	xml, err := os.ReadFile("./testdata/bbauth-metadata.xml")
 	if err != nil {
