@@ -17,6 +17,8 @@ github.com/russellhaering/goxmldsig v1.6.1 h1:SB7R5ttvrGIDB2juJAK/i7DQ2Ivr7agG+o
 github.com/russellhaering/goxmldsig v1.6.1/go.mod h1:haZkRcLs9W/Xp989fIjP3BrTdbFQveRF0QNZSYoH09w=
 github.com/sirosfoundation/go-cryptoutil v0.2.0 h1:oR+YQPWAbxbf0i+/rmwmsFtk5tFEcP/n6yyxU9OeMCg=
 github.com/sirosfoundation/go-cryptoutil v0.2.0/go.mod h1:OZi673Xmf5o2LzF/QMceptIpiB2GKYAYBfEa75ocBss=
+github.com/sirosfoundation/go-cryptoutil v0.6.0 h1:NmmHCZ/3ETuHlC1X4+0ce5QB6XI+IIKv2g4pymFQIr8=
+github.com/sirosfoundation/go-cryptoutil v0.6.0/go.mod h1:6JWcg/wLtALH2x6Hofa6VYX4b6XKiMNfXAVjp4yv9CA=
 github.com/smarty/assertions v1.15.0 h1:cR//PqUBUiQRakZWqBiFFQ9wb8emQGDb0HeGdqGByCY=
 github.com/smarty/assertions v1.15.0/go.mod h1:yABtdzeQs6l1brC900WlRNwj6ZR55d7B+E8C6HtKdec=
 github.com/smartystreets/goconvey v1.8.1 h1:qGjIddxOk4grTu9JPOU31tVfq3cNdBlNa5sSznIX1xY=
