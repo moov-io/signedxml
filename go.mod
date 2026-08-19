@@ -2,7 +2,7 @@ module github.com/moov-io/signedxml
 
 go 1.26
 
-toolchain go1.26.7
+toolchain go1.27.0
 
 require (
 	github.com/beevik/etree v1.7.1
