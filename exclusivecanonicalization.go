@@ -1,11 +1,18 @@
 package signedxml
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/beevik/etree"
 )
+
+// maxInScopeNamespaces caps prefix-to-URI mappings retained during exclusive
+// canonicalization. Legitimate SAML/WS-Federation documents use a handful of
+// prefixes; this bound rejects adversarial input that would otherwise grow
+// without limit (many xmlns declarations on nested elements).
+const maxInScopeNamespaces = 8192
 
 // the attribute and attributes structs are used to implement the sort.Interface
 type attribute struct {
@@ -46,7 +53,15 @@ func (a attributes) Swap(i, j int) {
 type ExclusiveCanonicalization struct {
 	WithComments                 bool
 	inclusiveNamespacePrefixList []string
+	inclusiveNamespacePrefixSet  map[string]struct{}
 	namespaces                   map[string]string
+}
+
+// nsScopeDelta records namespace map changes made at one element so they can
+// be undone on the way back up the tree, instead of copying the whole map.
+type nsScopeDelta struct {
+	added    []string
+	previous map[string]string
 }
 
 // collectAncestorNamespaces walks up the element tree and collects all namespace
@@ -114,7 +129,9 @@ func (e *ExclusiveCanonicalization) processDocument(doc *etree.Document, transfo
 
 	e.loadPrefixList(transformXML)
 	e.processDocLevelNodes(doc)
-	e.processRecursive(doc.Root(), nil, "")
+	if err := e.processRecursive(doc.Root(), make(map[string]struct{}), ""); err != nil {
+		return "", err
+	}
 
 	outputXML, err = doc.WriteToString()
 	return outputXML, err
@@ -135,7 +152,12 @@ func (e *ExclusiveCanonicalization) processDocumentWithAncestorNS(doc *etree.Doc
 
 	e.loadPrefixList(transformXML)
 	e.processDocLevelNodes(doc)
-	e.processRecursive(doc.Root(), nil, "")
+	if len(e.namespaces) > maxInScopeNamespaces {
+		return "", fmt.Errorf("signedxml: exclusive canonicalization exceeded %d in-scope namespaces", maxInScopeNamespaces)
+	}
+	if err := e.processRecursive(doc.Root(), make(map[string]struct{}), ""); err != nil {
+		return "", err
+	}
 
 	outputXML, err = doc.WriteToString()
 	return outputXML, err
@@ -151,6 +173,10 @@ func (e *ExclusiveCanonicalization) loadPrefixList(transformXML string) {
 			prefixList := inclNSNode.SelectAttrValue("PrefixList", "")
 			if prefixList != "" {
 				e.inclusiveNamespacePrefixList = strings.Split(prefixList, " ")
+				e.inclusiveNamespacePrefixSet = make(map[string]struct{}, len(e.inclusiveNamespacePrefixList))
+				for _, prefix := range e.inclusiveNamespacePrefixList {
+					e.inclusiveNamespacePrefixSet[prefix] = struct{}{}
+				}
 			}
 		}
 	}
@@ -211,15 +237,18 @@ func (e *ExclusiveCanonicalization) processDocLevelNodes(doc *etree.Document) {
 }
 
 func (e *ExclusiveCanonicalization) processRecursive(node *etree.Element,
-	prefixesInScope []string, defaultNS string) {
+	prefixesInScope map[string]struct{}, defaultNS string) error {
 
-	newDefaultNS, newPrefixesInScope := e.renderAttributes(node, prefixesInScope, defaultNS)
+	nsDelta, err := e.pushNamespaces(node)
+	if err != nil {
+		e.popNamespaces(nsDelta)
+		return err
+	}
+
+	newDefaultNS, addedPrefixes := e.renderAttributes(node, prefixesInScope, defaultNS)
 
 	for i := 0; i < len(node.Child); i++ {
 		child := node.Child[i]
-
-		oldNamespaces := e.namespaces
-		e.namespaces = copyNamespace(oldNamespaces)
 
 		switch child := child.(type) {
 		case *etree.Comment:
@@ -236,31 +265,80 @@ func (e *ExclusiveCanonicalization) processRecursive(node *etree.Element,
 				node.Child[i] = textNode
 			}
 		case *etree.Element:
-			e.processRecursive(child, newPrefixesInScope, newDefaultNS)
+			if err := e.processRecursive(child, prefixesInScope, newDefaultNS); err != nil {
+				popPrefixes(prefixesInScope, addedPrefixes)
+				e.popNamespaces(nsDelta)
+				return err
+			}
 		}
+	}
 
-		e.namespaces = oldNamespaces
+	popPrefixes(prefixesInScope, addedPrefixes)
+	e.popNamespaces(nsDelta)
+	return nil
+}
+
+func (e *ExclusiveCanonicalization) pushNamespaces(node *etree.Element) (nsScopeDelta, error) {
+	var delta nsScopeDelta
+	for _, attr := range node.Attr {
+		if attr.Space != "xmlns" {
+			continue
+		}
+		if old, exists := e.namespaces[attr.Key]; exists {
+			if old != attr.Value {
+				if delta.previous == nil {
+					delta.previous = make(map[string]string)
+				}
+				if _, recorded := delta.previous[attr.Key]; !recorded {
+					delta.previous[attr.Key] = old
+				}
+				e.namespaces[attr.Key] = attr.Value
+			}
+			continue
+		}
+		if len(e.namespaces) >= maxInScopeNamespaces {
+			return delta, fmt.Errorf("signedxml: exclusive canonicalization exceeded %d in-scope namespaces", maxInScopeNamespaces)
+		}
+		e.namespaces[attr.Key] = attr.Value
+		delta.added = append(delta.added, attr.Key)
+	}
+	return delta, nil
+}
+
+func (e *ExclusiveCanonicalization) popNamespaces(delta nsScopeDelta) {
+	for _, k := range delta.added {
+		delete(e.namespaces, k)
+	}
+	for k, v := range delta.previous {
+		e.namespaces[k] = v
 	}
 }
 
-func (e *ExclusiveCanonicalization) renderAttributes(node *etree.Element, prefixesInScope []string, defaultNS string) (newDefaultNS string, newPrefixesInScope []string) {
+func popPrefixes(prefixesInScope map[string]struct{}, added []string) {
+	for _, prefix := range added {
+		delete(prefixesInScope, prefix)
+	}
+}
+
+func (e *ExclusiveCanonicalization) renderAttributes(node *etree.Element, prefixesInScope map[string]struct{}, defaultNS string) (newDefaultNS string, addedPrefixes []string) {
 	currentNS := node.SelectAttrValue("xmlns", defaultNS)
 	elementAttributes := []etree.Attr{}
 	nsListToRender := make(map[string]string)
 	attrListToRender := attributes{}
 
-	// load map with for prefix -> uri lookup
-	for _, attr := range node.Attr {
-		if attr.Space == "xmlns" {
-			e.namespaces[attr.Key] = attr.Value
+	markInScope := func(prefix string) bool {
+		if _, ok := prefixesInScope[prefix]; ok {
+			return false
 		}
+		prefixesInScope[prefix] = struct{}{}
+		addedPrefixes = append(addedPrefixes, prefix)
+		return true
 	}
 
 	// handle the namespace of the node itself
 	if node.Space != "" {
-		if !contains(prefixesInScope, node.Space) {
+		if markInScope(node.Space) {
 			nsListToRender["xmlns:"+node.Space] = e.namespaces[node.Space]
-			prefixesInScope = append(prefixesInScope, node.Space)
 		}
 	} else if defaultNS != currentNS {
 		elementAttributes = append(elementAttributes, etree.Attr{Key: "xmlns", Value: currentNS})
@@ -271,35 +349,32 @@ func (e *ExclusiveCanonicalization) renderAttributes(node *etree.Element, prefix
 	// should be treated like inclusive canonicalization - they are always output
 	// if they are in scope, even if not visibly used in the element
 	for _, prefix := range e.inclusiveNamespacePrefixList {
-		if !contains(prefixesInScope, prefix) {
-			if uri, ok := e.namespaces[prefix]; ok && uri != "" {
-				nsListToRender["xmlns:"+prefix] = uri
-				prefixesInScope = append(prefixesInScope, prefix)
-			}
+		if _, already := prefixesInScope[prefix]; already {
+			continue
+		}
+		if uri, ok := e.namespaces[prefix]; ok && uri != "" {
+			nsListToRender["xmlns:"+prefix] = uri
+			markInScope(prefix)
 		}
 	}
 
 	for _, attr := range node.Attr {
 		// include the namespaces if they are in the inclusiveNamespacePrefixList
 		if attr.Space == "xmlns" {
-			if !contains(prefixesInScope, attr.Key) &&
-				contains(e.inclusiveNamespacePrefixList, attr.Key) {
-
+			if _, already := prefixesInScope[attr.Key]; !already && e.hasInclusivePrefix(attr.Key) {
 				nsListToRender["xmlns:"+attr.Key] = attr.Value
-				prefixesInScope = append(prefixesInScope, attr.Key)
+				markInScope(attr.Key)
 			}
 		}
 
 		// include namespaces for qualfied attributes
 		if attr.Space != "" &&
 			attr.Space != "xmlns" &&
-			!contains(prefixesInScope, attr.Space) {
+			markInScope(attr.Space) {
 
 			if attr.Space != "xml" {
 				nsListToRender["xmlns:"+attr.Space] = e.namespaces[attr.Space]
 			}
-
-			prefixesInScope = append(prefixesInScope, attr.Space)
 		}
 
 		// inclued all non-namespace attributes
@@ -322,16 +397,12 @@ func (e *ExclusiveCanonicalization) renderAttributes(node *etree.Element, prefix
 	elementAttributes = append(elementAttributes, sortedAttributes...)
 	// replace the nodes attributes with the sorted copy
 	node.Attr = elementAttributes
-	return currentNS, prefixesInScope
+	return currentNS, addedPrefixes
 }
 
-func contains(slice []string, value string) bool {
-	for _, s := range slice {
-		if s == value {
-			return true
-		}
-	}
-	return false
+func (e *ExclusiveCanonicalization) hasInclusivePrefix(prefix string) bool {
+	_, ok := e.inclusiveNamespacePrefixSet[prefix]
+	return ok
 }
 
 // getSortedNamespaces sorts the namespace attributes by their prefix
@@ -393,12 +464,4 @@ func isWhitespace(s string) bool {
 		}
 	}
 	return true
-}
-
-func copyNamespace(namespaces map[string]string) map[string]string {
-	newVersion := map[string]string{}
-	for index, element := range namespaces {
-		newVersion[index] = element
-	}
-	return newVersion
 }
