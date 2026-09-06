@@ -5,7 +5,7 @@ go 1.26.0
 toolchain go1.27.1
 
 require (
-	github.com/beevik/etree v1.7.1
+	github.com/beevik/etree v1.8.0
 	github.com/russellhaering/goxmldsig v1.6.1
 	github.com/sirosfoundation/go-cryptoutil v0.6.0
 	github.com/smartystreets/goconvey v1.8.1
