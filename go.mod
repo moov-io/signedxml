@@ -10,7 +10,7 @@ require (
 	github.com/sirosfoundation/go-cryptoutil v0.6.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/stretchr/testify v1.12.1
-	golang.org/x/crypto v0.56.0
+	golang.org/x/crypto v0.57.0
 )
 
 require (
