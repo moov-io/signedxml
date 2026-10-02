@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790856742473,
+  "lastUpdate": 1790941329329,
   "repoUrl": "https://github.com/moov-io/signedxml",
   "entries": {
     "moov-io/signedxml": [
@@ -4716,6 +4716,268 @@ window.BENCHMARK_DATA = {
             "value": 205,
             "unit": "allocs/op",
             "extra": "16257 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "renovate[bot]",
+            "username": "renovate[bot]",
+            "email": "29139614+renovate[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "ba54914d8f2d9c31290d992e821370cf2570e0aa",
+          "message": "fix(deps): update module github.com/sirosfoundation/go-cryptoutil to v0.7.1 (#146)\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2026-10-01T15:03:15Z",
+          "url": "https://github.com/moov-io/signedxml/commit/ba54914d8f2d9c31290d992e821370cf2570e0aa"
+        },
+        "date": 1790941327280,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkEncryptElement",
+            "value": 5548,
+            "unit": "ns/op\t    8600 B/op\t      23 allocs/op",
+            "extra": "209210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEncryptElement - ns/op",
+            "value": 5548,
+            "unit": "ns/op",
+            "extra": "209210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEncryptElement - B/op",
+            "value": 8600,
+            "unit": "B/op",
+            "extra": "209210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkEncryptElement - allocs/op",
+            "value": 23,
+            "unit": "allocs/op",
+            "extra": "209210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkDecryptElement",
+            "value": 16216,
+            "unit": "ns/op\t   10400 B/op\t      27 allocs/op",
+            "extra": "73111 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkDecryptElement - ns/op",
+            "value": 16216,
+            "unit": "ns/op",
+            "extra": "73111 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkDecryptElement - B/op",
+            "value": 10400,
+            "unit": "B/op",
+            "extra": "73111 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkDecryptElement - allocs/op",
+            "value": 27,
+            "unit": "allocs/op",
+            "extra": "73111 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519EncryptDecrypt",
+            "value": 182766,
+            "unit": "ns/op\t   24176 B/op\t     118 allocs/op",
+            "extra": "6211 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519EncryptDecrypt - ns/op",
+            "value": 182766,
+            "unit": "ns/op",
+            "extra": "6211 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519EncryptDecrypt - B/op",
+            "value": 24176,
+            "unit": "B/op",
+            "extra": "6211 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519EncryptDecrypt - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "6211 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519KeyAgreement",
+            "value": 105245,
+            "unit": "ns/op\t    1617 B/op\t      24 allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519KeyAgreement - ns/op",
+            "value": 105245,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519KeyAgreement - B/op",
+            "value": 1617,
+            "unit": "B/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519KeyAgreement - allocs/op",
+            "value": 24,
+            "unit": "allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519WrapKey",
+            "value": 107381,
+            "unit": "ns/op\t    3296 B/op\t      44 allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519WrapKey - ns/op",
+            "value": 107381,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519WrapKey - B/op",
+            "value": 3296,
+            "unit": "B/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkX25519WrapKey - allocs/op",
+            "value": 44,
+            "unit": "allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESKeyWrap",
+            "value": 1228,
+            "unit": "ns/op\t     736 B/op\t       8 allocs/op",
+            "extra": "871616 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESKeyWrap - ns/op",
+            "value": 1228,
+            "unit": "ns/op",
+            "extra": "871616 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESKeyWrap - B/op",
+            "value": 736,
+            "unit": "B/op",
+            "extra": "871616 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESKeyWrap - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "871616 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESKeyUnwrap",
+            "value": 1237,
+            "unit": "ns/op\t     720 B/op\t       8 allocs/op",
+            "extra": "889105 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESKeyUnwrap - ns/op",
+            "value": 1237,
+            "unit": "ns/op",
+            "extra": "889105 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESKeyUnwrap - B/op",
+            "value": 720,
+            "unit": "B/op",
+            "extra": "889105 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESKeyUnwrap - allocs/op",
+            "value": 8,
+            "unit": "allocs/op",
+            "extra": "889105 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESGCMEncrypt",
+            "value": 917.3,
+            "unit": "ns/op\t    2448 B/op\t       4 allocs/op",
+            "extra": "1284166 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESGCMEncrypt - ns/op",
+            "value": 917.3,
+            "unit": "ns/op",
+            "extra": "1284166 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESGCMEncrypt - B/op",
+            "value": 2448,
+            "unit": "B/op",
+            "extra": "1284166 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkAESGCMEncrypt - allocs/op",
+            "value": 4,
+            "unit": "allocs/op",
+            "extra": "1284166 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkW3CFullEncryptionPipeline",
+            "value": 113090,
+            "unit": "ns/op\t   13432 B/op\t     117 allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkW3CFullEncryptionPipeline - ns/op",
+            "value": 113090,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkW3CFullEncryptionPipeline - B/op",
+            "value": 13432,
+            "unit": "B/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkW3CFullEncryptionPipeline - allocs/op",
+            "value": 117,
+            "unit": "allocs/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkW3CFullDecryptionPipeline",
+            "value": 72563,
+            "unit": "ns/op\t   15176 B/op\t     205 allocs/op",
+            "extra": "16576 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkW3CFullDecryptionPipeline - ns/op",
+            "value": 72563,
+            "unit": "ns/op",
+            "extra": "16576 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkW3CFullDecryptionPipeline - B/op",
+            "value": 15176,
+            "unit": "B/op",
+            "extra": "16576 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkW3CFullDecryptionPipeline - allocs/op",
+            "value": 205,
+            "unit": "allocs/op",
+            "extra": "16576 times\n4 procs"
           }
         ]
       }
