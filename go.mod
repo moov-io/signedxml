@@ -7,7 +7,7 @@ toolchain go1.27.1
 require (
 	github.com/beevik/etree v1.8.1
 	github.com/russellhaering/goxmldsig v1.6.1
-	github.com/sirosfoundation/go-cryptoutil v0.7.1
+	github.com/sirosfoundation/go-cryptoutil v0.7.2
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/crypto v0.57.0
