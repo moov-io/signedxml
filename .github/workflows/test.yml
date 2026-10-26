@@ -5,8 +5,20 @@ on:
     branches: [ master ]
     paths-ignore:
       - "docs/bench/**"
+      - ".github/workflows/bench.yml"
+      - ".github/workflows/codeql.yml"
+      - ".github/workflows/fuzz.yml"
+      - ".github/workflows/macos.yml"
+      - ".github/workflows/zizmor.yml"
   pull_request:
     branches: [ master ]
+    paths-ignore:
+      - "docs/bench/**"
+      - ".github/workflows/bench.yml"
+      - ".github/workflows/codeql.yml"
+      - ".github/workflows/fuzz.yml"
+      - ".github/workflows/macos.yml"
+      - ".github/workflows/zizmor.yml"
 
 permissions:
   contents: read
@@ -15,9 +27,12 @@ jobs:
   build:
     name: Go Build (CGO)
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
+      fail-fast: false
+      # macOS is in macos.yml so hosted-runner capacity cancels do not fail this workflow.
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
     steps:
     - name: Set up Go 1.x
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0

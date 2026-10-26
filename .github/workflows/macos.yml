@@ -1,0 +1,47 @@
+# Use https://app.stepsecurity.io/ to improve workflow security
+name: macOS
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - "docs/bench/**"
+      - ".github/workflows/bench.yml"
+      - ".github/workflows/codeql.yml"
+      - ".github/workflows/fuzz.yml"
+      - ".github/workflows/test.yml"
+      - ".github/workflows/zizmor.yml"
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - "docs/bench/**"
+      - ".github/workflows/bench.yml"
+      - ".github/workflows/codeql.yml"
+      - ".github/workflows/fuzz.yml"
+      - ".github/workflows/test.yml"
+      - ".github/workflows/zizmor.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Go Test
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version: stable
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+
+    - name: Test
+      run: |
+        go vet ./...
+        go test ./...
