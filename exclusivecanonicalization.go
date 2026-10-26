@@ -3,15 +3,15 @@ package signedxml
 import (
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/beevik/etree"
 )
 
 // maxInScopeNamespaces caps prefix-to-URI mappings retained during exclusive
-// canonicalization. Legitimate SAML/WS-Federation documents use a handful of
-// prefixes; this bound rejects adversarial input that would otherwise grow
-// without limit (many xmlns declarations on nested elements).
+// canonicalization, and unique InclusiveNamespaces PrefixList tokens. Legitimate
+// SAML/WS-Federation documents use a handful of prefixes; this bound rejects
+// adversarial input that would otherwise grow without limit (many xmlns
+// declarations on nested elements, or a long PrefixList walked at every node).
 const maxInScopeNamespaces = 8192
 
 // the attribute and attributes structs are used to implement the sort.Interface
@@ -51,10 +51,9 @@ func (a attributes) Swap(i, j int) {
 // http://www.w3.org/2001/10/xml-exc-c14n#WithComments transform
 // algorithms
 type ExclusiveCanonicalization struct {
-	WithComments                 bool
-	inclusiveNamespacePrefixList []string
-	inclusiveNamespacePrefixSet  map[string]struct{}
-	namespaces                   map[string]string
+	WithComments                bool
+	inclusiveNamespacePrefixSet map[string]struct{}
+	namespaces                  map[string]string
 }
 
 // nsScopeDelta records namespace map changes made at one element so they can
@@ -127,7 +126,9 @@ func (e *ExclusiveCanonicalization) processDocument(doc *etree.Document, transfo
 	doc.WriteSettings.CanonicalText = true
 	doc.WriteSettings.CanonicalAttrVal = true
 
-	e.loadPrefixList(transformXML)
+	if err := e.loadPrefixList(transformXML); err != nil {
+		return "", err
+	}
 	e.processDocLevelNodes(doc)
 	if err := e.processRecursive(doc.Root(), make(map[string]struct{}), ""); err != nil {
 		return "", err
@@ -150,7 +151,9 @@ func (e *ExclusiveCanonicalization) processDocumentWithAncestorNS(doc *etree.Doc
 	doc.WriteSettings.CanonicalText = true
 	doc.WriteSettings.CanonicalAttrVal = true
 
-	e.loadPrefixList(transformXML)
+	if err := e.loadPrefixList(transformXML); err != nil {
+		return "", err
+	}
 	e.processDocLevelNodes(doc)
 	if len(e.namespaces) > maxInScopeNamespaces {
 		return "", fmt.Errorf("signedxml: exclusive canonicalization exceeded %d in-scope namespaces", maxInScopeNamespaces)
@@ -163,23 +166,68 @@ func (e *ExclusiveCanonicalization) processDocumentWithAncestorNS(doc *etree.Doc
 	return outputXML, err
 }
 
-func (e *ExclusiveCanonicalization) loadPrefixList(transformXML string) {
-	if transformXML != "" {
-		tDoc := etree.NewDocument()
-		tDoc.ReadSettings.PreserveCData = true
-		tDoc.ReadFromString(transformXML)
-		inclNSNode := tDoc.Root().SelectElement("InclusiveNamespaces")
-		if inclNSNode != nil {
-			prefixList := inclNSNode.SelectAttrValue("PrefixList", "")
-			if prefixList != "" {
-				e.inclusiveNamespacePrefixList = strings.Split(prefixList, " ")
-				e.inclusiveNamespacePrefixSet = make(map[string]struct{}, len(e.inclusiveNamespacePrefixList))
-				for _, prefix := range e.inclusiveNamespacePrefixList {
-					e.inclusiveNamespacePrefixSet[prefix] = struct{}{}
+func (e *ExclusiveCanonicalization) loadPrefixList(transformXML string) error {
+	e.inclusiveNamespacePrefixSet = nil
+	if transformXML == "" {
+		return nil
+	}
+
+	tDoc := etree.NewDocument()
+	tDoc.ReadSettings.PreserveCData = true
+	if err := tDoc.ReadFromString(transformXML); err != nil {
+		return err
+	}
+	root := tDoc.Root()
+	if root == nil {
+		return nil
+	}
+	inclNSNode := root.SelectElement("InclusiveNamespaces")
+	if inclNSNode == nil {
+		return nil
+	}
+	prefixList := inclNSNode.SelectAttrValue("PrefixList", "")
+	if prefixList == "" {
+		return nil
+	}
+
+	set, err := parseInclusivePrefixList(prefixList)
+	if err != nil {
+		return err
+	}
+	e.inclusiveNamespacePrefixSet = set
+	return nil
+}
+
+func parseInclusivePrefixList(prefixList string) (map[string]struct{}, error) {
+	set := make(map[string]struct{})
+	start := -1
+	for i := 0; i <= len(prefixList); i++ {
+		if i < len(prefixList) {
+			c := prefixList[i]
+			if c != ' ' && c != '\t' && c != '\n' && c != '\r' {
+				if start < 0 {
+					start = i
 				}
+				continue
 			}
 		}
+		if start < 0 {
+			continue
+		}
+		prefix := prefixList[start:i]
+		start = -1
+		if _, dup := set[prefix]; dup {
+			continue
+		}
+		if len(set) >= maxInScopeNamespaces {
+			return nil, fmt.Errorf("signedxml: exclusive canonicalization exceeded %d InclusiveNamespaces prefixes", maxInScopeNamespaces)
+		}
+		set[prefix] = struct{}{}
 	}
+	if len(set) == 0 {
+		return nil, nil
+	}
+	return set, nil
 }
 
 // process nodes outside of the root element
@@ -344,22 +392,28 @@ func (e *ExclusiveCanonicalization) renderAttributes(node *etree.Element, prefix
 		elementAttributes = append(elementAttributes, etree.Attr{Key: "xmlns", Value: currentNS})
 	}
 
-	// First, handle InclusiveNamespaces prefixes that are in scope from ancestors
-	// According to exc-c14n spec, namespaces in the InclusiveNamespaces PrefixList
-	// should be treated like inclusive canonicalization - they are always output
-	// if they are in scope, even if not visibly used in the element
-	for _, prefix := range e.inclusiveNamespacePrefixList {
-		if _, already := prefixesInScope[prefix]; already {
-			continue
-		}
-		if uri, ok := e.namespaces[prefix]; ok && uri != "" {
+	// InclusiveNamespaces prefixes that are in scope from ancestors are always
+	// output, even if not visibly used on this element (exc-c14n PrefixList).
+	// Walk in-scope declarations and test the set so cost tracks namespace
+	// count (already capped), not the number of tokens in PrefixList.
+	if len(e.inclusiveNamespacePrefixSet) > 0 {
+		for prefix, uri := range e.namespaces {
+			if uri == "" {
+				continue
+			}
+			if _, inclusive := e.inclusiveNamespacePrefixSet[prefix]; !inclusive {
+				continue
+			}
+			if _, already := prefixesInScope[prefix]; already {
+				continue
+			}
 			nsListToRender["xmlns:"+prefix] = uri
 			markInScope(prefix)
 		}
 	}
 
 	for _, attr := range node.Attr {
-		// include the namespaces if they are in the inclusiveNamespacePrefixList
+		// include the namespaces if they are in the InclusiveNamespaces PrefixList
 		if attr.Space == "xmlns" {
 			if _, already := prefixesInScope[attr.Key]; !already && e.hasInclusivePrefix(attr.Key) {
 				nsListToRender["xmlns:"+attr.Key] = attr.Value
