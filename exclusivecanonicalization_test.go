@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/beevik/etree"
 )
@@ -175,4 +176,194 @@ func nestedUnusedNamespaces(depth, nsPerLevel int) string {
 		fmt.Fprintf(&sb, `</n%d:e>`, d)
 	}
 	return sb.String()
+}
+
+func testRSACert(t *testing.T) x509.Certificate {
+	t.Helper()
+	pemString, err := os.ReadFile("./testdata/rsa.crt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pemBlock, _ := pem.Decode(pemString)
+	cert, err := x509.ParseCertificate(pemBlock.Bytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return *cert
+}
+
+func dummySignedXML(body, prefixList string) string {
+	return `<Response xmlns="urn:test">` + body +
+		`<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo>` +
+		`<CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"></CanonicalizationMethod>` +
+		`<SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"></SignatureMethod>` +
+		`<Reference URI=""><Transforms>` +
+		`<Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">` +
+		`<InclusiveNamespaces PrefixList="` + prefixList + `"></InclusiveNamespaces>` +
+		`</Transform></Transforms>` +
+		`<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"></DigestMethod>` +
+		`<DigestValue>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</DigestValue>` +
+		`</Reference></SignedInfo><SignatureValue>AAAA</SignatureValue></Signature></Response>`
+}
+
+func inclusiveTransform(prefixList string) string {
+	return `<Transform><InclusiveNamespaces PrefixList="` + prefixList + `"></InclusiveNamespaces></Transform>`
+}
+
+func TestParseInclusivePrefixList(t *testing.T) {
+	got, err := parseInclusivePrefixList("  bar \t bar\nfoo ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("got %d unique prefixes, want 2: %v", len(got), got)
+	}
+	if _, ok := got["bar"]; !ok {
+		t.Fatal("missing bar")
+	}
+	if _, ok := got["foo"]; !ok {
+		t.Fatal("missing foo")
+	}
+
+	got, err = parseInclusivePrefixList(strings.TrimSpace(strings.Repeat("p ", 10000)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("got %d unique prefixes, want 1", len(got))
+	}
+
+	var over strings.Builder
+	for i := 0; i <= maxInScopeNamespaces; i++ {
+		if i > 0 {
+			over.WriteByte(' ')
+		}
+		fmt.Fprintf(&over, "p%d", i)
+	}
+	_, err = parseInclusivePrefixList(over.String())
+	if err == nil {
+		t.Fatal("expected error when exceeding InclusiveNamespaces prefix limit")
+	}
+	if !strings.Contains(err.Error(), "InclusiveNamespaces prefixes") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestExclusiveCanonicalizationInclusiveNamespacesDuplicates(t *testing.T) {
+	input := `<foo:root xmlns:foo="urn:foo" xmlns:bar="urn:bar"><foo:child>x</foo:child></foo:root>`
+	want := `<foo:root xmlns:bar="urn:bar" xmlns:foo="urn:foo"><foo:child>x</foo:child></foo:root>`
+
+	gotOnce, err := ExclusiveCanonicalization{}.Process(input, inclusiveTransform("bar"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotDup, err := ExclusiveCanonicalization{}.Process(input, inclusiveTransform("bar bar bar"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotOnce != want {
+		t.Fatalf("got %q, want %q", gotOnce, want)
+	}
+	if gotDup != gotOnce {
+		t.Fatalf("duplicate PrefixList tokens must canonicalize the same as one token: got %q", gotDup)
+	}
+}
+
+func TestExclusiveCanonicalizationPrefixListLimit(t *testing.T) {
+	var sb strings.Builder
+	for i := 0; i <= maxInScopeNamespaces; i++ {
+		if i > 0 {
+			sb.WriteByte(' ')
+		}
+		fmt.Fprintf(&sb, "p%d", i)
+	}
+
+	_, err := ExclusiveCanonicalization{}.Process(`<a:e xmlns:a="urn:a">x</a:e>`, inclusiveTransform(sb.String()))
+	if err == nil {
+		t.Fatal("expected error when exceeding InclusiveNamespaces prefix limit")
+	}
+	if !strings.Contains(err.Error(), "InclusiveNamespaces prefixes") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestExclusiveCanonicalizationPrefixListAtLimit(t *testing.T) {
+	var sb strings.Builder
+	for i := 0; i < maxInScopeNamespaces; i++ {
+		if i > 0 {
+			sb.WriteByte(' ')
+		}
+		fmt.Fprintf(&sb, "p%d", i)
+	}
+
+	got, err := ExclusiveCanonicalization{}.Process(`<a:e xmlns:a="urn:a">x</a:e>`, inclusiveTransform(sb.String()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(got, `xmlns:a="urn:a"`) {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestValidateReferencesPrefixListLimit(t *testing.T) {
+	var sb strings.Builder
+	for i := 0; i <= maxInScopeNamespaces; i++ {
+		if i > 0 {
+			sb.WriteByte(' ')
+		}
+		fmt.Fprintf(&sb, "p%d", i)
+	}
+
+	v, err := NewValidator(dummySignedXML("<e/>", sb.String()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	v.Certificates = []x509.Certificate{testRSACert(t)}
+
+	_, err = v.ValidateReferences()
+	if err == nil {
+		t.Fatal("expected error when exceeding InclusiveNamespaces prefix limit")
+	}
+	if !strings.Contains(err.Error(), "InclusiveNamespaces prefixes") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestValidateReferencesPrefixListRepeatedTokens(t *testing.T) {
+	const elements = 10000
+	const tokens = 250000
+	body := strings.Repeat("<e/>", elements)
+	repeated := strings.TrimSpace(strings.Repeat("p ", tokens))
+	controlList := strings.Repeat("x", len(repeated))
+	cert := testRSACert(t)
+
+	run := func(name, list string) (time.Duration, error) {
+		t.Helper()
+		xml := dummySignedXML(body, list)
+		start := time.Now()
+		v, err := NewValidator(xml)
+		if err != nil {
+			t.Fatalf("%s: NewValidator: %v", name, err)
+		}
+		v.Certificates = []x509.Certificate{cert}
+		_, err = v.ValidateReferences()
+		return time.Since(start), err
+	}
+
+	controlTime, controlErr := run("control", controlList)
+	if controlErr == nil || !strings.Contains(controlErr.Error(), "Calculated digest") {
+		t.Fatalf("control: expected digest mismatch, got %v", controlErr)
+	}
+
+	bypassTime, bypassErr := run("repeated", repeated)
+	if bypassErr == nil || !strings.Contains(bypassErr.Error(), "Calculated digest") {
+		t.Fatalf("repeated: expected digest mismatch, got %v", bypassErr)
+	}
+
+	// Unpatched v1.4.1 walks every PrefixList token at every element (~500x).
+	// Dedup plus the in-scope walk keeps the repeated list near the equal-size control.
+	if bypassTime > 200*time.Millisecond && bypassTime > 10*controlTime {
+		t.Fatalf("repeated PrefixList took %s vs control %s (ratio %.1fx); unique tokens must not be re-walked per element",
+			bypassTime, controlTime, float64(bypassTime)/float64(controlTime))
+	}
 }
