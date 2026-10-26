@@ -68,7 +68,8 @@ func NewSignerFromDoc(doc *etree.Document) (*Signer, error) {
 	return s, nil
 }
 
-// Sign populates the XML digest and signature based on the parameters present and privateKey given
+// Sign populates the XML digest and signature based on the parameters present and privateKey given.
+// SignedInfo may contain at most 32 Reference elements.
 func (s *Signer) Sign(privateKey crypto.Signer) (string, error) {
 	s.privateKey = privateKey
 
@@ -107,6 +108,9 @@ func (s *Signer) SetReferenceIDAttribute(refIDAttribute string) {
 
 func (s *Signer) setDigest() (err error) {
 	references := s.signedInfo.FindElements("./Reference")
+	if len(references) > maxReferences {
+		return fmt.Errorf("signedxml: SignedInfo contains %d Reference elements, which exceeds the limit of %d", len(references), maxReferences)
+	}
 	for _, ref := range references {
 		// Skip external references like cid: URIs (used for MIME attachments in WS-Security).
 		// These have pre-computed digests and use transforms we don't implement.
@@ -115,7 +119,10 @@ func (s *Signer) setDigest() (err error) {
 			continue
 		}
 
-		doc := s.xml.Copy()
+		doc := s.xml
+		if referenceRequiresDocumentCopy(ref) {
+			doc = s.xml.Copy()
+		}
 
 		transforms := ref.SelectElement("Transforms")
 		if transforms != nil {

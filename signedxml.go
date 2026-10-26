@@ -14,6 +14,12 @@ import (
 	dsig "github.com/russellhaering/goxmldsig"
 )
 
+// maxReferences caps SignedInfo Reference elements processed during
+// validation and signing. Legitimate SAML/WS-Federation and XAdES
+// documents use a handful of references; this bound rejects adversarial
+// input that would otherwise deep-copy the document once per reference.
+const maxReferences = 32
+
 func init() {
 	hashAlgorithms = map[string]crypto.Hash{
 		"http://www.w3.org/2001/04/xmldsig-more#md5":    crypto.MD5,
@@ -250,6 +256,31 @@ func (s *signatureData) parseCanonAlgorithm() error {
 
 	return errors.New("signedxml: Unsupported Algorithm " + canonAlgoURI + " in " +
 		"CanonicalizationMethod")
+}
+
+// referenceRequiresDocumentCopy reports whether this Reference may mutate a
+// working copy of the whole document (for example enveloped-signature).
+// Canonicalization transforms operate on an element copy and do not need
+// the full tree cloned first.
+func referenceRequiresDocumentCopy(ref *etree.Element) bool {
+	transforms := ref.SelectElement("Transforms")
+	if transforms == nil {
+		return false
+	}
+	for _, transform := range transforms.SelectElements("Transform") {
+		algo := transform.SelectAttrValue("Algorithm", "")
+		if algo != "" && !strings.Contains(algo, "c14n") {
+			return true
+		}
+	}
+	return false
+}
+
+func cloneIfSame(orig, doc *etree.Document) *etree.Document {
+	if doc == orig {
+		return orig.Copy()
+	}
+	return doc
 }
 
 func (s *signatureData) getReferencedXML(reference *etree.Element, inputDoc *etree.Document) (outputDoc *etree.Document, err error) {

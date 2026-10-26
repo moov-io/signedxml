@@ -136,6 +136,10 @@ func (v *Validator) SigningCert() x509.Certificate {
 //
 // The references returned contain validated XML from the signature and must be used.
 // Callers that ignore the returned references are vulnerable to XML injection.
+//
+// SignedInfo may contain at most 32 Reference elements, including cid:
+// attachment references. Additional references are rejected before digest
+// or signature checks.
 func (v *Validator) ValidateReferences() ([]string, error) {
 	if err := v.loadValuesFromXML(); err != nil {
 		return nil, err
@@ -185,6 +189,9 @@ func (v *Validator) loadValuesFromXML() error {
 
 func (v *Validator) validateReferences() (referenced []*etree.Document, err error) {
 	references := v.signedInfo.FindElements("./Reference")
+	if len(references) > maxReferences {
+		return nil, fmt.Errorf("signedxml: SignedInfo contains %d Reference elements, which exceeds the limit of %d", len(references), maxReferences)
+	}
 	for _, ref := range references {
 		refUri := ref.SelectAttrValue("URI", "")
 
@@ -195,7 +202,10 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 			continue
 		}
 
-		doc := v.xml.Copy()
+		doc := v.xml
+		if referenceRequiresDocumentCopy(ref) {
+			doc = v.xml.Copy()
+		}
 
 		transforms := ref.SelectElement("Transforms")
 
@@ -308,12 +318,11 @@ func (v *Validator) validateReferences() (referenced []*etree.Document, err erro
 				" expected digestvalue of %s", refUri, calculatedValue, digestValue)
 		}
 
-		// Extract the element for return
 		doc, err = v.getReferencedXML(ref, doc)
 		if err != nil {
 			return nil, err
 		}
-		referenced = append(referenced, doc)
+		referenced = append(referenced, cloneIfSame(v.xml, doc))
 	}
 	return referenced, nil
 }
