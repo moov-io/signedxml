@@ -1,3 +1,65 @@
+## v1.4.2 (Released 2026-10-26)
+
+IMPROVEMENTS
+
+- fix: bound InclusiveNamespaces PrefixList during exclusive c14n (#156)
+- fix: cap SignedInfo references and skip redundant document copies (#154)
+
+## v1.4.1 (Released 2026-08-26)
+
+IMPROVEMENTS
+
+- fix: exclusive canonicalization now updates in-scope prefixes incrementally instead of copying the full prefix map at every node
+
+BUILD
+
+- security: enable weekly scanners and a Dependabot cooldown
+
+## v1.4.0 (Released 2026-08-18)
+
+ADDITIONS
+
+- feat: add SetCryptoExtensions for Brainpool certificates and signatures (#125)
+- feat: look up signature references by ID, Id, or id (#123)
+
+## v1.3.1 (Released 2026-08-13)
+
+ADDITIONS
+
+- feat: introduce NewValidatorFromDoc
+
+IMPROVEMENTS
+
+- fix: don't panic on quoted Reference URIs
+
+## v1.3.0 (Released 2026-04-02)
+
+ADDITIONS
+
+- feat: add the xmlenc package for XML Encryption 1.1
+- feat: support RSA-PSS (RSASSA-PSS) signature algorithms
+- feat: support Ed25519 (eddsa-ed25519) signatures
+- fix: leverage the crypto.Signer interface
+
+IMPROVEMENTS
+
+- fix: verify ECDSA signatures in the raw r||s form used by XML DSig
+- fix: pass InclusiveNamespaces from CanonicalizationMethod to ProcessElement
+- fix: handle C14N for both inline and transformed references
+
+## v1.2.5 (Released 2026-01-06)
+
+IMPROVEMENTS
+
+- chore: fix module name
+
+## v1.2.4 (Released 2026-01-06)
+
+IMPROVEMENTS
+
+- fix: retain CDATA during signing
+- fix: validation for XAdES signatures
+
 ## v1.2.3 (Released 2025-03-20)
 
 IMPROVEMENTS
