@@ -438,6 +438,9 @@ func (v *Validator) verifyRSAPSSSignature(certDer, data, sig []byte) error {
 	if !ok {
 		return fmt.Errorf("unsupported RSA-PSS algorithm: %v", v.sigAlgorithm)
 	}
+	if err := requireAvailableHash(hash); err != nil {
+		return err
+	}
 
 	h := hash.New()
 	h.Write(data)

@@ -30,7 +30,6 @@ Other packages that provide similar functionality rely on C libraries, which mak
   - http://www.w3.org/2001/04/xmlenc#sha256
   - http://www.w3.org/2001/04/xmldsig-more#sha384
   - http://www.w3.org/2001/04/xmlenc#sha512
-  - http://www.w3.org/2001/04/xmlenc#ripemd160
 
 
 - Signatures
