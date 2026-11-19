@@ -53,7 +53,6 @@ func init() {
 
 	CanonicalizationAlgorithms = map[string]CanonicalizationAlgorithm{
 		"http://www.w3.org/2000/09/xmldsig#enveloped-signature": EnvelopedSignature{},
-		"http://www.w3.org/TR/2001/REC-xml-c14n-20010315":       ExclusiveCanonicalization{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#":               ExclusiveCanonicalization{},
 		"http://www.w3.org/2001/10/xml-exc-c14n#WithComments":   ExclusiveCanonicalization{WithComments: true},
 		dsig.CanonicalXML11AlgorithmId.String():                 &c14N11Canonicalizer{},
@@ -94,9 +93,13 @@ type CanonicalizationAlgorithm interface {
 //
 // Implementations are provided for the following transforms:
 //
+//	http://www.w3.org/2000/09/xmldsig#enveloped-signature (EnvelopedSignature)
+//	http://www.w3.org/TR/2001/REC-xml-c14n-20010315 (C14N 1.0)
+//	http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments (C14N 1.0 WithComments)
 //	http://www.w3.org/2001/10/xml-exc-c14n# (ExclusiveCanonicalization)
 //	http://www.w3.org/2001/10/xml-exc-c14n#WithComments (ExclusiveCanonicalizationWithComments)
-//	http://www.w3.org/2000/09/xmldsig#enveloped-signature (EnvelopedSignature)
+//	http://www.w3.org/2006/12/xml-c14n11 (C14N 1.1)
+//	http://www.w3.org/2006/12/xml-c14n11#WithComments (C14N 1.1 WithComments)
 //
 // Custom implementations can be added to the map
 var CanonicalizationAlgorithms map[string]CanonicalizationAlgorithm
@@ -140,7 +143,7 @@ func (s *signatureData) parseEnvelopedSignature() error {
 	} else {
 		return errors.New("signedxml: Unable to find a unique signature element " +
 			"in the xml document. The signature must either be enveloped in the " +
-			"xml doc or externally assigned to Validator.SetSignature")
+			"xml doc or assigned with SetSignature")
 	}
 	return nil
 }

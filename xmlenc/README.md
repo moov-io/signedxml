@@ -13,7 +13,7 @@ This package implements XML Encryption Syntax and Processing Version 1.1 as spec
 ## Installation
 
 ```bash
-go get github.com/leifj/signedxml/xmlenc
+go get github.com/moov-io/signedxml/xmlenc
 ```
 
 ## Quick Start
@@ -23,7 +23,7 @@ go get github.com/leifj/signedxml/xmlenc
 ```go
 import (
     "github.com/beevik/etree"
-    "github.com/leifj/signedxml/xmlenc"
+    "github.com/moov-io/signedxml/xmlenc"
 )
 
 // Generate or load recipient X25519 key
