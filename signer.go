@@ -177,6 +177,9 @@ func (s *Signer) setSignature() error {
 	// Ed25519 is "pure" - it signs the message directly without pre-hashing
 	// For other algorithms, we hash the canonicalized SignedInfo first
 	if signingAlgorithm.algorithm != "ed25519" {
+		if err := requireAvailableHash(signingAlgorithm.hash); err != nil {
+			return err
+		}
 		hasher := signingAlgorithm.hash.New()
 		hasher.Write([]byte(canonSignedInfo))
 		hashed = hasher.Sum(nil)

@@ -28,7 +28,6 @@ func init() {
 		"http://www.w3.org/2001/04/xmlenc#sha256":       crypto.SHA256,
 		"http://www.w3.org/2001/04/xmldsig-more#sha384": crypto.SHA384,
 		"http://www.w3.org/2001/04/xmlenc#sha512":       crypto.SHA512,
-		"http://www.w3.org/2001/04/xmlenc#ripemd160":    crypto.RIPEMD160,
 	}
 
 	signatureAlgorithms = map[string]x509.SignatureAlgorithm{
@@ -427,6 +426,15 @@ func processTransform(transform *etree.Element,
 	return docOut, nil
 }
 
+// requireAvailableHash returns an error when the hash is known but not
+// linked into this Go build.
+func requireAvailableHash(h crypto.Hash) error {
+	if !h.Available() {
+		return fmt.Errorf("signedxml: hash algorithm %s is not available", h)
+	}
+	return nil
+}
+
 // getDigestAlgorithm extracts the digest hash algorithm from a Reference element.
 func getDigestAlgorithm(reference *etree.Element) (crypto.Hash, error) {
 	digestMethodElement := reference.SelectElement("DigestMethod")
@@ -443,6 +451,9 @@ func getDigestAlgorithm(reference *etree.Element) (crypto.Hash, error) {
 	if !ok {
 		return 0, fmt.Errorf("signedxml: unable to find matching hash"+
 			"algorithm for %s in hashAlgorithms", digestMethodURI)
+	}
+	if err := requireAvailableHash(digestAlgo); err != nil {
+		return 0, err
 	}
 	return digestAlgo, nil
 }
